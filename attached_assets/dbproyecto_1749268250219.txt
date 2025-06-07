@@ -1,0 +1,194 @@
+-- Crear base de datos (opcional)
+-- CREATE DATABASE nombre_bd;
+-- USE nombre_bd;
+
+-- Tabla AdmisionPaciente
+CREATE TABLE AdmisionPaciente (
+    id_admision INT NOT NULL AUTO_INCREMENT,
+    id_paciente INT NULL,
+    id_admisionista INT NULL,
+    id_institucion INT NULL,
+    fecha_admision DATETIME NULL,
+    motivo_ingreso TEXT NULL,
+    via_ingreso ENUM('Urgencia','Hospitalizacion','Remision') NULL,
+    estado_inicial TEXT NULL,
+    observaciones TEXT NULL,
+    PRIMARY KEY (id_admision),
+    INDEX idx_paciente (id_paciente),
+    INDEX idx_admisionista (id_admisionista),
+    INDEX idx_institucion (id_institucion)
+);
+
+-- Tabla Antecedentes
+CREATE TABLE Antecedentes (
+    id_antecedente INT NOT NULL AUTO_INCREMENT,
+    id_historia_clinica INT NULL,
+    alergias TEXT NULL,
+    antecedentes_familiares TEXT NULL,
+    riesgos_ocupacionales TEXT NULL,
+    cod_snomed_ct_alergias VARCHAR(50) NULL,
+    cod_snomed_ct_antecedentes VARCHAR(50) NULL,
+    cod_snomed_ct_riesgos VARCHAR(50) NULL,
+    PRIMARY KEY (id_antecedente),
+    INDEX idx_historia_clinica (id_historia_clinica)
+);
+
+-- Tabla AtencionMedica
+CREATE TABLE AtencionMedica (
+    id_atencion INT NOT NULL AUTO_INCREMENT,
+    id_historia_clinica INT NULL,
+    modalidad_aplicacion VARCHAR(100) NULL,
+    entorno_atencion VARCHAR(100) NULL,
+    fecha_triaje DATETIME NULL,
+    clasificacion_triaje ENUM('1','2','3','4','5') NULL,
+    PRIMARY KEY (id_atencion),
+    INDEX idx_historia_clinica (id_historia_clinica)
+);
+
+-- Tabla Diagnostico
+CREATE TABLE Diagnostico (
+    id_diagnostico INT NOT NULL AUTO_INCREMENT,
+    id_historia_clinica INT NULL,
+    tipo_diagnostico TEXT NULL,
+    descripcion TEXT NULL,
+    cod_snomed_ct VARCHAR(50) NULL,
+    PRIMARY KEY (id_diagnostico),
+    INDEX idx_historia_clinica (id_historia_clinica)
+);
+
+-- Tabla EvaluacionClinica
+CREATE TABLE EvaluacionClinica (
+    id_evaluacion INT NOT NULL AUTO_INCREMENT,
+    id_historia_clinica INT NULL,
+    fecha_resultado DATETIME NULL,
+    instrumento_utilizado VARCHAR(100) NULL,
+    resultado_parametro VARCHAR(100) NULL,
+    resultado_valor DECIMAL(10,0) NULL,
+    cod_snomed_ct VARCHAR(50) NULL,
+    PRIMARY KEY (id_evaluacion),
+    INDEX idx_historia_clinica (id_historia_clinica)
+);
+
+-- Tabla HistoriaClinica
+CREATE TABLE HistoriaClinica (
+    id_historia_clinica INT NOT NULL AUTO_INCREMENT,
+    id_paciente INT NULL,
+    id_admision INT NULL,
+    id_profesional_ingreso INT NULL,
+    id_profesional_egreso INT NULL,
+    id_institucion INT NULL,
+    fecha_egreso DATETIME NULL,
+    PRIMARY KEY (id_historia_clinica),
+    INDEX idx_paciente (id_paciente),
+    INDEX idx_admision (id_admision),
+    INDEX idx_profesional_ingreso (id_profesional_ingreso),
+    INDEX idx_profesional_egreso (id_profesional_egreso),
+    INDEX idx_institucion (id_institucion)
+);
+
+-- Tabla Incapacidad
+CREATE TABLE Incapacidad (
+    id_incapacidad INT NOT NULL AUTO_INCREMENT,
+    id_historia_clinica INT NULL,
+    tipo_incapacidad VARCHAR(50) NULL,
+    dias_incapacidad INT NULL,
+    cod_snomed_ct VARCHAR(50) NULL,
+    PRIMARY KEY (id_incapacidad),
+    INDEX idx_historia_clinica (id_historia_clinica)
+);
+
+-- Tabla InstitucionSalud
+CREATE TABLE InstitucionSalud (
+    id_institucion INT NOT NULL AUTO_INCREMENT,
+    nombre VARCHAR(100) NULL,
+    nivel_atencion ENUM('I','II','III','IV','V') NULL,
+    direccion VARCHAR(255) NULL,
+    municipio VARCHAR(100) NULL,
+    telefono VARCHAR(15) NULL,
+    PRIMARY KEY (id_institucion)
+);
+
+-- Tabla Paciente
+CREATE TABLE Paciente (
+    id_paciente INT NOT NULL AUTO_INCREMENT,
+    nombres VARCHAR(100) NULL,
+    apellidos VARCHAR(100) NULL,
+    documento_identidad VARCHAR(20) NULL,
+    fecha_nacimiento DATE NULL,
+    edad INT NULL,
+    sexo ENUM('Masculino','Femenino','Otro') NULL,
+    genero VARCHAR(50) NULL,
+    ocupacion VARCHAR(100) NULL,
+    pais_nacionalidad VARCHAR(100) NULL,
+    pais_residencia VARCHAR(100) NULL,
+    municipio_residencia VARCHAR(100) NULL,
+    zona_residencia ENUM('Urbana','Rural') NULL,
+    etnia VARCHAR(100) NULL,
+    comunidad_etnica VARCHAR(100) NULL,
+    correo VARCHAR(100) NULL,
+    PRIMARY KEY (id_paciente),
+    UNIQUE KEY idx_documento (documento_identidad),
+    UNIQUE KEY idx_correo (correo)
+);
+
+-- Tabla ProfesionalSalud
+CREATE TABLE ProfesionalSalud (
+    id_profesional INT NOT NULL AUTO_INCREMENT,
+    nombres VARCHAR(100) NULL,
+    apellidos VARCHAR(100) NULL,
+    rol ENUM('Médico','Enfermero/a','Admisionista') NULL,
+    telefono VARCHAR(15) NULL,
+    correo VARCHAR(100) NULL,
+    PRIMARY KEY (id_profesional),
+    UNIQUE KEY idx_correo (correo)
+);
+
+-- Tabla Remision
+CREATE TABLE Remision (
+    id_remision INT NOT NULL AUTO_INCREMENT,
+    id_historia_clinica INT NULL,
+    id_institucion_destino INT NULL,
+    codigo_ambulancia VARCHAR(50) NULL,
+    observaciones TEXT NULL,
+    PRIMARY KEY (id_remision),
+    INDEX idx_historia_clinica (id_historia_clinica),
+    INDEX idx_institucion_destino (id_institucion_destino)
+);
+
+-- Tabla Tratamiento
+CREATE TABLE Tratamiento (
+    id_tratamiento INT NOT NULL AUTO_INCREMENT,
+    id_historia_clinica INT NULL,
+    tipo_tecnologia VARCHAR(100) NULL,
+    descripcion VARCHAR(255) NULL,
+    dosis VARCHAR(50) NULL,
+    via_administracion VARCHAR(50) NULL,
+    frecuencia VARCHAR(50) NULL,
+    duracion_dias INT NULL,
+    cantidad_unidades INT NULL,
+    finalidad_tecnologia VARCHAR(100) NULL,
+    cod_snomed_ct VARCHAR(50) NULL,
+    PRIMARY KEY (id_tratamiento),
+    INDEX idx_historia_clinica (id_historia_clinica)
+);
+
+-- Opcional: Agregar claves foráneas para mantener integridad referencial
+-- ALTER TABLE AdmisionPaciente ADD FOREIGN KEY (id_paciente) REFERENCES Paciente(id_paciente);
+-- ALTER TABLE AdmisionPaciente ADD FOREIGN KEY (id_admisionista) REFERENCES ProfesionalSalud(id_profesional);
+-- ALTER TABLE AdmisionPaciente ADD FOREIGN KEY (id_institucion) REFERENCES InstitucionSalud(id_institucion);
+
+-- ALTER TABLE Antecedentes ADD FOREIGN KEY (id_historia_clinica) REFERENCES HistoriaClinica(id_historia_clinica);
+-- ALTER TABLE AtencionMedica ADD FOREIGN KEY (id_historia_clinica) REFERENCES HistoriaClinica(id_historia_clinica);
+-- ALTER TABLE Diagnostico ADD FOREIGN KEY (id_historia_clinica) REFERENCES HistoriaClinica(id_historia_clinica);
+-- ALTER TABLE EvaluacionClinica ADD FOREIGN KEY (id_historia_clinica) REFERENCES HistoriaClinica(id_historia_clinica);
+
+-- ALTER TABLE HistoriaClinica ADD FOREIGN KEY (id_paciente) REFERENCES Paciente(id_paciente);
+-- ALTER TABLE HistoriaClinica ADD FOREIGN KEY (id_admision) REFERENCES AdmisionPaciente(id_admision);
+-- ALTER TABLE HistoriaClinica ADD FOREIGN KEY (id_profesional_ingreso) REFERENCES ProfesionalSalud(id_profesional);
+-- ALTER TABLE HistoriaClinica ADD FOREIGN KEY (id_profesional_egreso) REFERENCES ProfesionalSalud(id_profesional);
+-- ALTER TABLE HistoriaClinica ADD FOREIGN KEY (id_institucion) REFERENCES InstitucionSalud(id_institucion);
+
+-- ALTER TABLE Incapacidad ADD FOREIGN KEY (id_historia_clinica) REFERENCES HistoriaClinica(id_historia_clinica);
+-- ALTER TABLE Remision ADD FOREIGN KEY (id_historia_clinica) REFERENCES HistoriaClinica(id_historia_clinica);
+-- ALTER TABLE Remision ADD FOREIGN KEY (id_institucion_destino) REFERENCES InstitucionSalud(id_institucion);
+-- ALTER TABLE Tratamiento ADD FOREIGN KEY (id_historia_clinica) REFERENCES HistoriaClinica(id_historia_clinica);
