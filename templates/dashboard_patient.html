@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Portal del Paciente - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="fas fa-user text-success me-2"></i>
+            Portal del Paciente
+        </h1>
+        <div class="text-muted">
+            {% if patient %}
+                Bienvenido, {{ patient.nombres }} {{ patient.apellidos }}
+            {% endif %}
+        </div>
+    </div>
+
+    {% if patient %}
+    <!-- Patient Info Card -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-id-card me-2"></i>
+                Mi Información Personal
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>Nombre Completo:</strong><br>
+                        {{ patient.nombres }} {{ patient.apellidos }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Documento de Identidad:</strong><br>
+                        <code>{{ patient.documento_identidad or '-' }}</code>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Edad:</strong><br>
+                        {{ patient.edad or '-' }} años
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>Fecha de Nacimiento:</strong><br>
+                        {{ patient.fecha_nacimiento.strftime('%d/%m/%Y') if patient.fecha_nacimiento else '-' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Sexo:</strong><br>
+                        {% if patient.sexo %}
+                            <span class="badge bg-{{ 'info' if patient.sexo == 'Masculino' else 'warning' if patient.sexo == 'Femenino' else 'secondary' }}">
+                                {{ patient.sexo }}
+                            </span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Correo Electrónico:</strong><br>
+                        {% if patient.correo %}
+                            <a href="mailto:{{ patient.correo }}">{{ patient.correo }}</a>
+                        {% else %}
+                            <span class="text-muted">No registrado</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fas fa-file-medical fa-3x text-primary mb-3"></i>
+                    <h5>Mis Historias Clínicas</h5>
+                    <p class="text-muted">{{ histories|length }} registros</p>
+                    <a href="#historias" class="btn btn-primary">Ver Detalles</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fas fa-vial fa-3x text-info mb-3"></i>
+                    <h5>Mis Exámenes</h5>
+                    <p class="text-muted">{{ evaluations|length }} resultados</p>
+                    <a href="#examenes" class="btn btn-info">Ver Resultados</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="fas fa-download fa-3x text-success mb-3"></i>
+                    <h5>Descargar Datos</h5>
+                    <p class="text-muted">Exportar información</p>
+                    <button class="btn btn-success" onclick="window.print()">Imprimir</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clinical Histories Section -->
+    <div id="historias" class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history me-2"></i>
+                Mis Historias Clínicas Recientes
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if histories %}
+                {% for history in histories %}
+                <div class="border rounded p-3 mb-3">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6 class="text-primary">Historia Clínica #{{ history.id_historia_clinica }}</h6>
+                            <p class="mb-2">
+                                <strong>Motivo de Consulta:</strong><br>
+                                {{ history.motivo_ingreso or 'No especificado' }}
+                            </p>
+                            <p class="mb-0">
+                                <strong>Institución:</strong> {{ history.institucion_nombre or 'No especificada' }}
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="mb-2">
+                                <strong>Fecha de Admisión:</strong><br>
+                                {{ history.fecha_admision.strftime('%d/%m/%Y') if history.fecha_admision else '-' }}
+                            </div>
+                            <div class="mb-2">
+                                <strong>Estado:</strong><br>
+                                {% if history.fecha_egreso %}
+                                    <span class="badge bg-secondary">Finalizada</span>
+                                {% else %}
+                                    <span class="badge bg-success">En curso</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-file-medical fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">No tienes historias clínicas registradas</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Evaluations Section -->
+    <div id="examenes" class="card border-0 shadow-sm">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-flask me-2"></i>
+                Mis Últimos Resultados de Exámenes
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if evaluations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo de Examen</th>
+                                <th>Parámetro</th>
+                                <th>Resultado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for evaluation in evaluations %}
+                            <tr>
+                                <td>
+                                    {% if evaluation.fecha_resultado %}
+                                        {{ evaluation.fecha_resultado.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if evaluation.instrumento_utilizado %}
+                                        <span class="badge bg-info">{{ evaluation.instrumento_utilizado }}</span>
+                                    {% else %}
+                                        <span class="text-muted">No especificado</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ evaluation.resultado_parametro or '-' }}</td>
+                                <td>
+                                    {% if evaluation.resultado_valor %}
+                                        <span class="badge bg-success">{{ evaluation.resultado_valor }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-vial fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">No tienes resultados de exámenes registrados</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% else %}
+    <!-- No Patient Data -->
+    <div class="text-center py-5">
+        <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+        <h3>Información no disponible</h3>
+        <p class="text-muted">No se pudo cargar la información del paciente.</p>
+        <a href="{{ url_for('role_selection') }}" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-1"></i>Volver al inicio
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

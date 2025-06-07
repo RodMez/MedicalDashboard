@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Enfermería - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="fas fa-user-nurse text-info me-2"></i>
+            Dashboard de Enfermería
+        </h1>
+        <div class="text-muted">
+            <i class="fas fa-clock me-1"></i>
+            <span id="current-time"></span>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Pacientes a Cargo</h6>
+                            <h3 class="mb-0 text-info">{{ stats.total_patients or 0 }}</h3>
+                        </div>
+                        <div class="text-info fs-1">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Observaciones Pendientes</h6>
+                            <h3 class="mb-0 text-warning">{{ attention_needed|length }}</h3>
+                        </div>
+                        <div class="text-warning fs-1">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Admisiones Hoy</h6>
+                            <h3 class="mb-0 text-success">{{ recent_admissions|selectattr('fecha_admision')|list|length }}</h3>
+                        </div>
+                        <div class="text-success fs-1">
+                            <i class="fas fa-hospital"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Row -->
+    <div class="row g-4">
+        <!-- Patients Needing Attention -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bell me-2"></i>
+                        Pacientes que Requieren Atención
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if attention_needed %}
+                        {% for patient in attention_needed %}
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div>
+                                    <h6 class="mb-1">{{ patient.nombres }} {{ patient.apellidos }}</h6>
+                                    <small class="text-muted">{{ patient.documento_identidad }} - {{ patient.edad }} años</small>
+                                </div>
+                                <small class="badge bg-warning text-dark">
+                                    {{ patient.fecha_admision.strftime('%d/%m') if patient.fecha_admision else '-' }}
+                                </small>
+                            </div>
+                            <div class="mt-2">
+                                <strong>Observaciones:</strong>
+                                <p class="mb-0 text-muted">{{ patient.observaciones }}</p>
+                            </div>
+                            <div class="mt-2">
+                                <a href="{{ url_for('clinical_history', patient_id=patient.id_paciente) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-file-medical me-1"></i>Ver Historia
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
+                            <p class="text-muted">No hay pacientes que requieran atención especial</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Admissions -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-hospital-user me-2"></i>
+                        Admisiones Recientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_admissions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Paciente</th>
+                                        <th>Fecha</th>
+                                        <th>Vía</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for admission in recent_admissions[:10] %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">
+                                                {{ admission.nombres }} {{ admission.apellidos }}
+                                            </div>
+                                            <small class="text-muted">{{ admission.documento_identidad }}</small>
+                                        </td>
+                                        <td>
+                                            {% if admission.fecha_admision %}
+                                                {{ admission.fecha_admision.strftime('%d/%m/%Y') }}<br>
+                                                <small class="text-muted">{{ admission.fecha_admision.strftime('%H:%M') }}</small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if admission.via_ingreso %}
+                                                <span class="badge bg-{{ 'danger' if admission.via_ingreso == 'Urgencia' else 'info' }}">
+                                                    {{ admission.via_ingreso }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if admission.observaciones %}
+                                                <i class="fas fa-exclamation-circle text-warning" title="Tiene observaciones"></i>
+                                            {% else %}
+                                                <i class="fas fa-check-circle text-success" title="Sin observaciones"></i>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No hay admisiones recientes</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('patients') }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-users me-1"></i>Ver todos los pacientes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-3">Acciones Rápidas</h6>
+                    <a href="{{ url_for('patients') }}" class="btn btn-primary me-2">
+                        <i class="fas fa-users me-1"></i>Lista de Pacientes
+                    </a>
+                    <a href="{{ url_for('clinical_histories') }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-file-medical me-1"></i>Historias Clínicas
+                    </a>
+                    <a href="{{ url_for('exams') }}" class="btn btn-outline-info">
+                        <i class="fas fa-vial me-1"></i>Ver Exámenes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Update current time
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        document.getElementById('current-time').textContent = timeString;
+    }
+    
+    // Update time immediately and then every minute
+    updateTime();
+    setInterval(updateTime, 60000);
+</script>
+{% endblock %}

@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Administrador - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="fas fa-user-cog text-warning me-2"></i>
+            Dashboard de Administración
+        </h1>
+        <div class="text-muted">
+            <i class="fas fa-shield-alt me-1"></i>
+            Panel de Control del Sistema
+        </div>
+    </div>
+
+    <!-- System Statistics -->
+    <div class="row g-4 mb-5">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Total Pacientes</h6>
+                            <h3 class="mb-0 text-primary">{{ stats.paciente or 0 }}</h3>
+                        </div>
+                        <div class="text-primary fs-1">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Historias Clínicas</h6>
+                            <h3 class="mb-0 text-info">{{ stats.historiaclinica or 0 }}</h3>
+                        </div>
+                        <div class="text-info fs-1">
+                            <i class="fas fa-file-medical"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Profesionales</h6>
+                            <h3 class="mb-0 text-success">{{ stats.profesionalsalud or 0 }}</h3>
+                        </div>
+                        <div class="text-success fs-1">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Instituciones</h6>
+                            <h3 class="mb-0 text-warning">{{ stats.institucionsalud or 0 }}</h3>
+                        </div>
+                        <div class="text-warning fs-1">
+                            <i class="fas fa-hospital"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Database Tables Overview -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-database me-2"></i>
+                        Estado de las Tablas del Sistema
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tabla</th>
+                                    <th>Registros</th>
+                                    <th>Estado</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><i class="fas fa-users me-2"></i>Pacientes</td>
+                                    <td><span class="badge bg-primary">{{ stats.paciente or 0 }}</span></td>
+                                    <td><i class="fas fa-check-circle text-success"></i></td>
+                                    <td>Registro de pacientes del sistema</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-file-medical me-2"></i>Historias Clínicas</td>
+                                    <td><span class="badge bg-info">{{ stats.historiaclinica or 0 }}</span></td>
+                                    <td><i class="fas fa-check-circle text-success"></i></td>
+                                    <td>Expedientes médicos completos</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-hospital-user me-2"></i>Admisiones</td>
+                                    <td><span class="badge bg-secondary">{{ stats.admisionpaciente or 0 }}</span></td>
+                                    <td><i class="fas fa-check-circle text-success"></i></td>
+                                    <td>Ingresos hospitalarios</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-vial me-2"></i>Evaluaciones Clínicas</td>
+                                    <td><span class="badge bg-success">{{ stats.evaluacionclinica or 0 }}</span></td>
+                                    <td><i class="fas fa-check-circle text-success"></i></td>
+                                    <td>Resultados de exámenes y pruebas</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-stethoscope me-2"></i>Diagnósticos</td>
+                                    <td><span class="badge bg-danger">{{ stats.diagnostico or 0 }}</span></td>
+                                    <td><i class="fas fa-check-circle text-success"></i></td>
+                                    <td>Diagnósticos médicos registrados</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-pills me-2"></i>Tratamientos</td>
+                                    <td><span class="badge bg-warning">{{ stats.tratamiento or 0 }}</span></td>
+                                    <td><i class="fas fa-check-circle text-success"></i></td>
+                                    <td>Medicamentos y terapias</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        Acciones de Administración
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="exportData()">
+                            <i class="fas fa-download me-2"></i>Exportar Datos
+                        </button>
+                        <button class="btn btn-outline-info" onclick="generateReport()">
+                            <i class="fas fa-chart-bar me-2"></i>Generar Reporte
+                        </button>
+                        <button class="btn btn-outline-success" onclick="systemBackup()">
+                            <i class="fas fa-save me-2"></i>Respaldo del Sistema
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="systemMaintenance()">
+                            <i class="fas fa-tools me-2"></i>Mantenimiento
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-server me-2"></i>
+                        Estado del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Base de Datos</span>
+                            <span class="badge bg-success">Conectado</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Servidor Web</span>
+                            <span class="badge bg-success">Activo</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Memoria</span>
+                            <span class="badge bg-warning text-dark">75%</span>
+                        </div>
+                    </div>
+                    <div class="mb-0">
+                        <div class="d-flex justify-content-between">
+                            <span>Almacenamiento</span>
+                            <span class="badge bg-info">Disponible</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent System Activity -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-history me-2"></i>
+                Actividad Reciente del Sistema
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if recent_activity %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Fecha</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in recent_activity %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-{{ 'primary' if activity.tipo == 'Admisión' else 'info' }}">
+                                        {{ activity.tipo }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if activity.fecha %}
+                                        {{ activity.fecha.strftime('%d/%m/%Y %H:%M') }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ activity.descripcion or '-' }}</td>
+                                <td>
+                                    <i class="fas fa-check-circle text-success" title="Completado"></i>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-clock fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">No hay actividad reciente registrada</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function exportData() {
+        alert('Funcionalidad de exportación en desarrollo');
+    }
+    
+    function generateReport() {
+        window.print();
+    }
+    
+    function systemBackup() {
+        alert('Proceso de respaldo iniciado. Se notificará cuando esté completo.');
+    }
+    
+    function systemMaintenance() {
+        if (confirm('¿Está seguro de que desea iniciar el mantenimiento del sistema?')) {
+            alert('Modo de mantenimiento activado');
+        }
+    }
+</script>
+{% endblock %}

@@ -2,6 +2,7 @@ from flask import render_template, request, jsonify, flash, redirect, url_for
 from app import app
 from database import db_manager
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -288,6 +289,245 @@ def exams():
                              patients_with_exams=[], 
                              search='', 
                              selected_patient_id='')
+
+# Dashboard routes for different roles
+@app.route('/dashboard/enfermera')
+def dashboard_nurse():
+    """Nurse dashboard with patient care focus"""
+    try:
+        # Get nurse-specific statistics
+        stats = {}
+        
+        # Total patients under care
+        total_patients_query = "SELECT COUNT(*) as count FROM Paciente"
+        result = db_manager.execute_single_query(total_patients_query)
+        stats['total_patients'] = result['count'] if result else 0
+        
+        # Recent admissions for nursing notes
+        recent_admissions_query = """
+        SELECT ap.id_admision, ap.fecha_admision, ap.motivo_ingreso, ap.via_ingreso, ap.observaciones,
+               p.nombres, p.apellidos, p.documento_identidad, p.edad, p.sexo
+        FROM AdmisionPaciente ap
+        LEFT JOIN Paciente p ON ap.id_paciente = p.id_paciente
+        ORDER BY ap.fecha_admision DESC
+        LIMIT 15
+        """
+        recent_admissions = db_manager.execute_query(recent_admissions_query)
+        
+        # Patients needing attention (based on observations)
+        attention_needed_query = """
+        SELECT ap.id_admision, ap.observaciones, ap.fecha_admision,
+               p.nombres, p.apellidos, p.documento_identidad, p.edad
+        FROM AdmisionPaciente ap
+        LEFT JOIN Paciente p ON ap.id_paciente = p.id_paciente
+        WHERE ap.observaciones IS NOT NULL AND ap.observaciones != ''
+        ORDER BY ap.fecha_admision DESC
+        LIMIT 10
+        """
+        attention_needed = db_manager.execute_query(attention_needed_query)
+        
+        return render_template('dashboard_nurse.html', 
+                             stats=stats, 
+                             recent_admissions=recent_admissions,
+                             attention_needed=attention_needed)
+    
+    except Exception as e:
+        logger.error(f"Nurse dashboard error: {e}")
+        flash(f'Error loading nurse dashboard: {str(e)}', 'error')
+        return render_template('dashboard_nurse.html', stats={}, recent_admissions=[], attention_needed=[])
+
+@app.route('/dashboard/paciente')
+def dashboard_patient():
+    """Patient dashboard - simplified view"""
+    try:
+        # For demo purposes, show first patient's data
+        # In real implementation, this would be based on logged-in patient
+        patient_query = "SELECT * FROM Paciente LIMIT 1"
+        patient = db_manager.execute_single_query(patient_query)
+        
+        if patient:
+            # Get patient's clinical histories
+            histories_query = """
+            SELECT hc.*, ap.fecha_admision, ap.motivo_ingreso,
+                   inst.nombre as institucion_nombre
+            FROM HistoriaClinica hc
+            LEFT JOIN AdmisionPaciente ap ON hc.id_admision = ap.id_admision
+            LEFT JOIN InstitucionSalud inst ON hc.id_institucion = inst.id_institucion
+            WHERE hc.id_paciente = %s
+            ORDER BY ap.fecha_admision DESC
+            LIMIT 5
+            """
+            histories = db_manager.execute_query(histories_query, (patient['id_paciente'],))
+            
+            # Get recent evaluations
+            evaluations_query = """
+            SELECT ec.fecha_resultado, ec.instrumento_utilizado, 
+                   ec.resultado_parametro, ec.resultado_valor
+            FROM EvaluacionClinica ec
+            INNER JOIN HistoriaClinica hc ON ec.id_historia_clinica = hc.id_historia_clinica
+            WHERE hc.id_paciente = %s
+            ORDER BY ec.fecha_resultado DESC
+            LIMIT 5
+            """
+            evaluations = db_manager.execute_query(evaluations_query, (patient['id_paciente'],))
+            
+        else:
+            histories = []
+            evaluations = []
+            
+        return render_template('dashboard_patient.html',
+                             patient=patient,
+                             histories=histories,
+                             evaluations=evaluations)
+    
+    except Exception as e:
+        logger.error(f"Patient dashboard error: {e}")
+        flash(f'Error loading patient dashboard: {str(e)}', 'error')
+        return render_template('dashboard_patient.html', patient=None, histories=[], evaluations=[])
+
+@app.route('/dashboard/admin')
+def dashboard_admin():
+    """Admin dashboard with system overview"""
+    try:
+        # System statistics
+        stats = {}
+        
+        # Database table counts
+        tables = ['Paciente', 'HistoriaClinica', 'AdmisionPaciente', 'ProfesionalSalud', 
+                 'EvaluacionClinica', 'Diagnostico', 'Tratamiento', 'InstitucionSalud']
+        
+        for table in tables:
+            query = f"SELECT COUNT(*) as count FROM {table}"
+            result = db_manager.execute_single_query(query)
+            stats[table.lower()] = result['count'] if result else 0
+        
+        # Recent system activity
+        activity_query = """
+        SELECT 'Admisión' as tipo, ap.fecha_admision as fecha, 
+               CONCAT(p.nombres, ' ', p.apellidos) as descripcion
+        FROM AdmisionPaciente ap
+        LEFT JOIN Paciente p ON ap.id_paciente = p.id_paciente
+        WHERE ap.fecha_admision IS NOT NULL
+        UNION ALL
+        SELECT 'Evaluación' as tipo, ec.fecha_resultado as fecha,
+               CONCAT('Evaluación - ', ec.instrumento_utilizado) as descripcion
+        FROM EvaluacionClinica ec
+        WHERE ec.fecha_resultado IS NOT NULL
+        ORDER BY fecha DESC
+        LIMIT 20
+        """
+        recent_activity = db_manager.execute_query(activity_query)
+        
+        return render_template('dashboard_admin.html',
+                             stats=stats,
+                             recent_activity=recent_activity)
+    
+    except Exception as e:
+        logger.error(f"Admin dashboard error: {e}")
+        flash(f'Error loading admin dashboard: {str(e)}', 'error')
+        return render_template('dashboard_admin.html', stats={}, recent_activity=[])
+
+@app.route('/clinical_histories')
+def clinical_histories():
+    """Clinical histories list page"""
+    try:
+        recent_only = request.args.get('recent') == 'true'
+        search = request.args.get('search', '')
+        
+        base_query = """
+        SELECT hc.id_historia_clinica, hc.fecha_egreso,
+               p.nombres, p.apellidos, p.documento_identidad, p.edad, p.sexo,
+               ap.fecha_admision, ap.motivo_ingreso, ap.via_ingreso,
+               inst.nombre as institucion_nombre,
+               pi.nombres as prof_nombres, pi.apellidos as prof_apellidos
+        FROM HistoriaClinica hc
+        LEFT JOIN Paciente p ON hc.id_paciente = p.id_paciente
+        LEFT JOIN AdmisionPaciente ap ON hc.id_admision = ap.id_admision
+        LEFT JOIN InstitucionSalud inst ON hc.id_institucion = inst.id_institucion
+        LEFT JOIN ProfesionalSalud pi ON hc.id_profesional_ingreso = pi.id_profesional
+        """
+        
+        conditions = []
+        params = []
+        
+        if search:
+            conditions.append("""
+            (p.nombres LIKE %s OR p.apellidos LIKE %s OR p.documento_identidad LIKE %s
+             OR ap.motivo_ingreso LIKE %s)
+            """)
+            search_term = f'%{search}%'
+            params.extend([search_term] * 4)
+        
+        if recent_only:
+            conditions.append("ap.fecha_admision >= DATE_SUB(NOW(), INTERVAL 30 DAY)")
+        
+        if conditions:
+            query = base_query + " WHERE " + " AND ".join(conditions)
+        else:
+            query = base_query
+            
+        query += " ORDER BY ap.fecha_admision DESC LIMIT 50"
+        
+        histories = db_manager.execute_query(query, params)
+        
+        return render_template('clinical_histories_list.html',
+                             histories=histories,
+                             search=search,
+                             recent_only=recent_only)
+    
+    except Exception as e:
+        logger.error(f"Clinical histories error: {e}")
+        flash(f'Error loading clinical histories: {str(e)}', 'error')
+        return render_template('clinical_histories_list.html', histories=[], search='', recent_only=False)
+
+@app.route('/clinical_history/<int:patient_id>/edit', methods=['GET', 'POST'])
+def edit_clinical_history(patient_id):
+    """Edit clinical history - for doctors to add notes"""
+    try:
+        if request.method == 'POST':
+            # Handle form submission to add new notes
+            historia_id = request.form.get('historia_id')
+            new_observation = request.form.get('observacion')
+            
+            if historia_id and new_observation:
+                # Update the admission with new observation using a safer approach
+                with db_manager.get_connection() as conn:
+                    with conn.cursor() as cursor:
+                        # First get current observations
+                        select_query = """
+                        SELECT observaciones FROM AdmisionPaciente 
+                        WHERE id_admision = (
+                            SELECT id_admision FROM HistoriaClinica WHERE id_historia_clinica = %s
+                        )
+                        """
+                        cursor.execute(select_query, (historia_id,))
+                        result = cursor.fetchone()
+                        
+                        # Prepare new observation text
+                        current_obs = result['observaciones'] if result and result['observaciones'] else ''
+                        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        new_obs = f"{current_obs}\n[{timestamp}] MÉDICO: {new_observation}" if current_obs else f"[{timestamp}] MÉDICO: {new_observation}"
+                        
+                        # Update with new observations
+                        update_query = """
+                        UPDATE AdmisionPaciente SET observaciones = %s 
+                        WHERE id_admision = (
+                            SELECT id_admision FROM HistoriaClinica WHERE id_historia_clinica = %s
+                        )
+                        """
+                        cursor.execute(update_query, (new_obs, historia_id))
+                        conn.commit()
+                        
+                flash('Nota médica agregada exitosamente', 'success')
+                return redirect(url_for('clinical_history', patient_id=patient_id))
+        
+        # Get patient and clinical history data (same as view)
+        return clinical_history(patient_id)
+    
+    except Exception as e:
+        logger.error(f"Edit clinical history error: {e}")
+        flash(f'Error editing clinical history: {str(e)}', 'error')
+        return redirect(url_for('clinical_history', patient_id=patient_id))
 
 @app.errorhandler(404)
 def not_found_error(error):

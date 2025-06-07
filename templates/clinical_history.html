@@ -15,6 +15,9 @@
                     </h4>
                 </div>
                 <div class="col-auto">
+                    <a href="#" onclick="toggleEditMode()" class="btn btn-outline-light btn-sm me-2" id="editToggle">
+                        <i class="fas fa-edit me-1"></i>Editar Historia
+                    </a>
                     <a href="{{ url_for('patients') }}" class="btn btn-outline-light btn-sm">
                         <i class="fas fa-arrow-left me-1"></i>Volver a Pacientes
                     </a>
@@ -373,5 +376,73 @@
             </div>
         </div>
     </div>
+
+    <!-- Medical Notes Section (for editing) -->
+    <div id="editSection" class="card border-0 shadow-sm mt-4" style="display: none;">
+        <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-stethoscope me-2"></i>
+                Agregar Nota Médica
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('edit_clinical_history', patient_id=patient.id_paciente) }}">
+                {% if histories %}
+                <div class="mb-3">
+                    <label for="historia_id" class="form-label">Seleccionar Historia Clínica:</label>
+                    <select class="form-select" name="historia_id" required>
+                        {% for history in histories %}
+                        <option value="{{ history.id_historia_clinica }}">
+                            HC-{{ history.id_historia_clinica }} - {{ history.fecha_admision.strftime('%d/%m/%Y') if history.fecha_admision else 'Sin fecha' }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <label for="observacion" class="form-label">Nueva Observación Médica:</label>
+                    <textarea class="form-control" name="observacion" rows="4" 
+                              placeholder="Escriba aquí las observaciones médicas, diagnósticos, evolución del paciente, etc." required></textarea>
+                    <div class="form-text">
+                        Esta nota se agregará al historial de observaciones del paciente con fecha y hora actuales.
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary" onclick="toggleEditMode()">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-1"></i>Guardar Nota Médica
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleEditMode() {
+        const editSection = document.getElementById('editSection');
+        const editToggle = document.getElementById('editToggle');
+        
+        if (editSection.style.display === 'none') {
+            editSection.style.display = 'block';
+            editToggle.innerHTML = '<i class="fas fa-times me-1"></i>Cancelar Edición';
+            editToggle.classList.remove('btn-outline-light');
+            editToggle.classList.add('btn-outline-warning');
+            
+            // Scroll to edit section
+            editSection.scrollIntoView({ behavior: 'smooth' });
+        } else {
+            editSection.style.display = 'none';
+            editToggle.innerHTML = '<i class="fas fa-edit me-1"></i>Editar Historia';
+            editToggle.classList.remove('btn-outline-warning');
+            editToggle.classList.add('btn-outline-light');
+        }
+    }
+</script>
 {% endblock %}

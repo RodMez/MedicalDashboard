@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Historias Clínicas - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="fas fa-file-medical text-primary me-2"></i>
+            Historias Clínicas
+        </h1>
+        <div class="text-muted">
+            Total: {{ histories|length }} registros
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('clinical_histories') }}" class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control" 
+                               name="search" 
+                               value="{{ search }}" 
+                               placeholder="Buscar por paciente, documento o motivo de ingreso...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="recent" value="true" 
+                               {{ 'checked' if recent_only }}>
+                        <label class="form-check-label">
+                            Solo recientes (30 días)
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i>Filtrar
+                    </button>
+                </div>
+                {% if search or recent_only %}
+                <div class="col-12">
+                    <a href="{{ url_for('clinical_histories') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-times me-1"></i>Limpiar filtros
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Clinical Histories Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>
+                Registro de Historias Clínicas
+                {% if search %}
+                    - Resultados para "{{ search }}"
+                {% endif %}
+                {% if recent_only %}
+                    - Últimos 30 días
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if histories %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID Historia</th>
+                                <th>Paciente</th>
+                                <th>Fecha Admisión</th>
+                                <th>Motivo de Ingreso</th>
+                                <th>Vía Ingreso</th>
+                                <th>Profesional</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for history in histories %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">HC-{{ history.id_historia_clinica }}</span>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">
+                                        {{ history.nombres }} {{ history.apellidos }}
+                                    </div>
+                                    <small class="text-muted">{{ history.documento_identidad }}</small>
+                                    <div>
+                                        <small class="text-muted">
+                                            {{ history.edad }} años - {{ history.sexo or 'No especificado' }}
+                                        </small>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if history.fecha_admision %}
+                                        <div>{{ history.fecha_admision.strftime('%d/%m/%Y') }}</div>
+                                        <small class="text-muted">{{ history.fecha_admision.strftime('%H:%M') }}</small>
+                                    {% else %}
+                                        <span class="text-muted">No registrada</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="text-wrap" style="max-width: 200px;">
+                                        {{ history.motivo_ingreso[:80] }}{{ '...' if history.motivo_ingreso and history.motivo_ingreso|length > 80 else '' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if history.via_ingreso %}
+                                        <span class="badge bg-{{ 'danger' if history.via_ingreso == 'Urgencia' else 'info' if history.via_ingreso == 'Hospitalizacion' else 'warning' }}">
+                                            {{ history.via_ingreso }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if history.prof_nombres %}
+                                        <div class="fw-semibold">
+                                            {{ history.prof_nombres }} {{ history.prof_apellidos }}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">No asignado</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if history.fecha_egreso %}
+                                        <span class="badge bg-secondary">Finalizada</span>
+                                        <div>
+                                            <small class="text-muted">{{ history.fecha_egreso.strftime('%d/%m/%Y') }}</small>
+                                        </div>
+                                    {% else %}
+                                        <span class="badge bg-success">En curso</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('clinical_history', patient_id=history.id_historia_clinica) }}" 
+                                           class="btn btn-outline-primary btn-sm"
+                                           title="Ver Historia Completa">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('edit_clinical_history', patient_id=history.id_historia_clinica) }}" 
+                                           class="btn btn-outline-success btn-sm"
+                                           title="Editar Historia">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{{ url_for('exams', patient_id=history.id_historia_clinica) }}" 
+                                           class="btn btn-outline-info btn-sm"
+                                           title="Ver Exámenes">
+                                            <i class="fas fa-vial"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-file-medical fa-3x text-muted mb-3"></i>
+                    {% if search or recent_only %}
+                        <h5>No se encontraron historias clínicas</h5>
+                        <p class="text-muted">No hay resultados para los filtros aplicados</p>
+                        <a href="{{ url_for('clinical_histories') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-1"></i>Ver todas las historias
+                        </a>
+                    {% else %}
+                        <h5>No hay historias clínicas registradas</h5>
+                        <p class="text-muted">La base de datos no contiene historias clínicas</p>
+                        <a href="{{ url_for('patients') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-users me-1"></i>Ver pacientes
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-3">Acciones Rápidas</h6>
+                    <a href="{{ url_for('patients') }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-users me-1"></i>Lista de Pacientes
+                    </a>
+                    <a href="{{ url_for('exams') }}" class="btn btn-outline-info me-2">
+                        <i class="fas fa-vial me-1"></i>Ver Exámenes
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Focus search input if there's a search term
+        {% if search %}
+            document.querySelector('input[name="search"]').focus();
+        {% endif %}
+    });
+</script>
+{% endblock %}
