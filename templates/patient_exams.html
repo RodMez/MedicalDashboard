@@ -1,0 +1,174 @@
+{% extends "base_paciente.html" %}
+
+{% block title %}Mis Exámenes - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            {% if patient %}
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-0">
+                        <i class="fas fa-vial text-success me-2"></i>
+                        Mis Resultados de Exámenes
+                    </h2>
+                    <p class="text-muted mb-0">{{ patient.nombres }} {{ patient.apellidos }} - {{ patient.documento_identidad }}</p>
+                </div>
+                <button class="btn btn-success" onclick="downloadExams()">
+                    <i class="fas fa-download me-1"></i>
+                    Descargar Resultados
+                </button>
+            </div>
+
+            <!-- Exam Results -->
+            {% if evaluations %}
+            <div class="row">
+                {% for evaluation in evaluations %}
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-flask me-1"></i>
+                                {{ evaluation.tipo_evaluacion or 'Examen Médico' }}
+                            </h6>
+                            <small class="opacity-75">
+                                {{ evaluation.fecha_resultado.strftime('%d/%m/%Y') if evaluation.fecha_resultado else 'Fecha no disponible' }}
+                            </small>
+                        </div>
+                        <div class="card-body">
+                            {% if evaluation.resultado_valor %}
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <strong class="text-success">Resultado:</strong>
+                                    <span class="badge bg-success">{{ evaluation.resultado_valor }}</span>
+                                </div>
+                                {% if evaluation.unidad_medida %}
+                                <small class="text-muted">Unidad: {{ evaluation.unidad_medida }}</small>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            {% if evaluation.rango_referencia %}
+                            <div class="mb-3">
+                                <strong class="text-success">Rango de Referencia:</strong>
+                                <p class="mb-0 small">{{ evaluation.rango_referencia }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            {% if evaluation.interpretacion %}
+                            <div class="mb-3">
+                                <strong class="text-success">Interpretación:</strong>
+                                <div class="bg-light p-2 rounded">
+                                    <p class="mb-0 small">{{ evaluation.interpretacion }}</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if evaluation.observaciones %}
+                            <div class="mb-3">
+                                <strong class="text-success">Observaciones:</strong>
+                                <p class="mb-0 small text-muted">{{ evaluation.observaciones }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer text-muted">
+                            <small>
+                                <i class="fas fa-calendar me-1"></i>
+                                Evaluación ID: {{ evaluation.id_evaluacion }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Exam Summary Table -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-table me-1"></i>
+                        Resumen de Exámenes ({{ evaluations|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Tipo de Examen</th>
+                                    <th>Resultado</th>
+                                    <th>Estado</th>
+                                    <th>Interpretación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for evaluation in evaluations %}
+                                <tr>
+                                    <td>{{ evaluation.fecha_resultado.strftime('%d/%m/%Y') if evaluation.fecha_resultado else 'N/A' }}</td>
+                                    <td>{{ evaluation.tipo_evaluacion or 'No especificado' }}</td>
+                                    <td>
+                                        {{ evaluation.resultado_valor or 'N/A' }}
+                                        {% if evaluation.unidad_medida %}
+                                        <small class="text-muted">{{ evaluation.unidad_medida }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">Completado</span>
+                                    </td>
+                                    <td>
+                                        {% if evaluation.interpretacion %}
+                                        <span class="text-truncate" style="max-width: 200px;" title="{{ evaluation.interpretacion }}">
+                                            {{ evaluation.interpretacion[:50] }}{% if evaluation.interpretacion|length > 50 %}...{% endif %}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">Sin interpretación</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            {% else %}
+            <!-- No Exams Available -->
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-vial fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No hay exámenes disponibles</h5>
+                    <p class="text-muted">Sus resultados de exámenes aparecerán aquí cuando estén disponibles.</p>
+                    <div class="mt-4">
+                        <p class="small text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Los resultados pueden tardar entre 24-48 horas en aparecer después de realizados los exámenes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- No Patient Found -->
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Paciente no encontrado</h5>
+                    <p class="text-muted">No se pudo cargar la información del paciente.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadExams() {
+    // In a real implementation, this would generate and download exam results
+    alert('Función de descarga en desarrollo. Sus resultados de exámenes estarán disponibles para descarga próximamente.');
+}
+</script>
+{% endblock %}

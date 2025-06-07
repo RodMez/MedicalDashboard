@@ -1,0 +1,253 @@
+{% extends "base_enfermera.html" %}
+
+{% block title %}Gestión de Antecedentes - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-0">
+                        <i class="fas fa-notes-medical text-info me-2"></i>
+                        Gestión de Antecedentes
+                    </h2>
+                    <p class="text-muted mb-0">Agregar y actualizar antecedentes médicos de pacientes</p>
+                </div>
+            </div>
+
+            <!-- Search Patient -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-search me-1"></i>
+                        Buscar Paciente
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="patientSearch" 
+                                   placeholder="Buscar por nombre o documento de identidad...">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-info w-100" onclick="searchPatient()">
+                                <i class="fas fa-search me-1"></i>Buscar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient List -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-users me-1"></i>
+                        Pacientes Disponibles
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if patients %}
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Documento</th>
+                                        <th>Nombre Completo</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for patient in patients %}
+                                    <tr>
+                                        <td>{{ patient.documento_identidad }}</td>
+                                        <td>{{ patient.nombres }} {{ patient.apellidos }}</td>
+                                        <td>
+                                            <button class="btn btn-info btn-sm" 
+                                                    onclick="openAntecedentsModal({{ patient.id_paciente }}, '{{ patient.nombres }} {{ patient.apellidos }}')">
+                                                <i class="fas fa-plus me-1"></i>
+                                                Agregar Antecedentes
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No hay pacientes disponibles</h5>
+                            <p class="text-muted">No se encontraron pacientes para gestionar antecedentes.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Antecedents Modal -->
+<div class="modal fade" id="antecedentsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-notes-medical me-2"></i>
+                    Antecedentes Médicos - <span id="patientName"></span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/nurse/antecedents/add">
+                <div class="modal-body">
+                    <input type="hidden" id="patientId" name="patient_id">
+                    
+                    <!-- Personal Antecedents -->
+                    <div class="mb-4">
+                        <h6 class="text-info">
+                            <i class="fas fa-user me-1"></i>
+                            Antecedentes Personales
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Alergias</label>
+                                <textarea class="form-control" name="alergias" rows="2" 
+                                          placeholder="Especificar alergias conocidas"></textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Medicamentos</label>
+                                <textarea class="form-control" name="medicamentos" rows="2" 
+                                          placeholder="Medicamentos actuales"></textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Cirugías Previas</label>
+                                <textarea class="form-control" name="cirugias" rows="2" 
+                                          placeholder="Historial quirúrgico"></textarea>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Enfermedades Crónicas</label>
+                                <textarea class="form-control" name="enfermedades_cronicas" rows="2" 
+                                          placeholder="Enfermedades de base"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Family Antecedents -->
+                    <div class="mb-4">
+                        <h6 class="text-info">
+                            <i class="fas fa-users me-1"></i>
+                            Antecedentes Familiares
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Diabetes</label>
+                                <select class="form-select" name="diabetes_familiar">
+                                    <option value="">Seleccionar</option>
+                                    <option value="padre">Padre</option>
+                                    <option value="madre">Madre</option>
+                                    <option value="hermanos">Hermanos</option>
+                                    <option value="abuelos">Abuelos</option>
+                                    <option value="ninguno">Ninguno</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Hipertensión</label>
+                                <select class="form-select" name="hipertension_familiar">
+                                    <option value="">Seleccionar</option>
+                                    <option value="padre">Padre</option>
+                                    <option value="madre">Madre</option>
+                                    <option value="hermanos">Hermanos</option>
+                                    <option value="abuelos">Abuelos</option>
+                                    <option value="ninguno">Ninguno</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Cáncer</label>
+                                <select class="form-select" name="cancer_familiar">
+                                    <option value="">Seleccionar</option>
+                                    <option value="padre">Padre</option>
+                                    <option value="madre">Madre</option>
+                                    <option value="hermanos">Hermanos</option>
+                                    <option value="abuelos">Abuelos</option>
+                                    <option value="ninguno">Ninguno</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Otros Antecedentes</label>
+                                <textarea class="form-control" name="otros_familiares" rows="2" 
+                                          placeholder="Otros antecedentes familiares relevantes"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Social Antecedents -->
+                    <div class="mb-3">
+                        <h6 class="text-info">
+                            <i class="fas fa-smoking me-1"></i>
+                            Antecedentes Sociales
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Tabaquismo</label>
+                                <select class="form-select" name="tabaquismo">
+                                    <option value="no">No fuma</option>
+                                    <option value="si">Fumador actual</option>
+                                    <option value="ex">Ex-fumador</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Alcoholismo</label>
+                                <select class="form-select" name="alcoholismo">
+                                    <option value="no">No consume</option>
+                                    <option value="ocasional">Ocasional</option>
+                                    <option value="frecuente">Frecuente</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Actividad Física</label>
+                                <select class="form-select" name="actividad_fisica">
+                                    <option value="sedentario">Sedentario</option>
+                                    <option value="leve">Leve</option>
+                                    <option value="moderado">Moderado</option>
+                                    <option value="intenso">Intenso</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-save me-1"></i>Guardar Antecedentes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openAntecedentsModal(patientId, patientName) {
+    document.getElementById('patientId').value = patientId;
+    document.getElementById('patientName').textContent = patientName;
+    
+    const modal = new bootstrap.Modal(document.getElementById('antecedentsModal'));
+    modal.show();
+}
+
+function searchPatient() {
+    const searchTerm = document.getElementById('patientSearch').value.toLowerCase();
+    const tableRows = document.querySelectorAll('tbody tr');
+    
+    tableRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

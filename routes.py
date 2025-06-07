@@ -480,6 +480,211 @@ def clinical_histories():
         flash(f'Error loading clinical histories: {str(e)}', 'error')
         return render_template('clinical_histories_list.html', histories=[], search='', recent_only=False)
 
+# Nurse-specific routes
+@app.route('/nurse/notes')
+def nurse_notes():
+    """Nurse notes management"""
+    try:
+        # Get all admissions with observations for nurse review
+        notes_query = """
+        SELECT ap.id_admision, ap.fecha_admision, ap.observaciones, ap.motivo_ingreso,
+               p.nombres, p.apellidos, p.documento_identidad, p.edad
+        FROM AdmisionPaciente ap
+        LEFT JOIN Paciente p ON ap.id_paciente = p.id_paciente
+        WHERE ap.observaciones IS NOT NULL AND ap.observaciones != ''
+        ORDER BY ap.fecha_admision DESC
+        LIMIT 50
+        """
+        notes = db_manager.execute_query(notes_query)
+        
+        return render_template('nurse_notes.html', notes=notes)
+    
+    except Exception as e:
+        logger.error(f"Nurse notes error: {e}")
+        flash(f'Error loading nurse notes: {str(e)}', 'error')
+        return render_template('nurse_notes.html', notes=[])
+
+@app.route('/nurse/antecedents')
+def add_antecedents():
+    """Add antecedents for patients"""
+    try:
+        # Get patients without antecedents
+        patients_query = """
+        SELECT p.id_paciente, p.nombres, p.apellidos, p.documento_identidad
+        FROM Paciente p
+        ORDER BY p.nombres, p.apellidos
+        LIMIT 20
+        """
+        patients = db_manager.execute_query(patients_query)
+        
+        return render_template('add_antecedents.html', patients=patients)
+    
+    except Exception as e:
+        logger.error(f"Add antecedents error: {e}")
+        flash(f'Error loading antecedents page: {str(e)}', 'error')
+        return render_template('add_antecedents.html', patients=[])
+
+@app.route('/nurse/vital-signs')
+def vital_signs():
+    """Vital signs management"""
+    return render_template('vital_signs.html')
+
+# Patient-specific routes
+@app.route('/patient/history')
+def patient_history():
+    """Patient's complete clinical history"""
+    try:
+        # Get first patient for demo (in real app, would be logged-in patient)
+        patient_query = "SELECT * FROM Paciente LIMIT 1"
+        patient = db_manager.execute_single_query(patient_query)
+        
+        if patient:
+            # Get complete clinical history
+            history_query = """
+            SELECT hc.*, ap.fecha_admision, ap.motivo_ingreso, ap.observaciones,
+                   inst.nombre as institucion_nombre
+            FROM HistoriaClinica hc
+            LEFT JOIN AdmisionPaciente ap ON hc.id_admision = ap.id_admision
+            LEFT JOIN InstitucionSalud inst ON hc.id_institucion = inst.id_institucion
+            WHERE hc.id_paciente = %s
+            ORDER BY ap.fecha_admision DESC
+            """
+            histories = db_manager.execute_query(history_query, (patient['id_paciente'],))
+            
+            # Get antecedents
+            antecedents_query = """
+            SELECT a.* FROM Antecedentes a
+            INNER JOIN HistoriaClinica hc ON a.id_historia_clinica = hc.id_historia_clinica
+            WHERE hc.id_paciente = %s
+            """
+            antecedents = db_manager.execute_query(antecedents_query, (patient['id_paciente'],))
+            
+            # Get diagnoses
+            diagnoses_query = """
+            SELECT d.* FROM Diagnostico d
+            INNER JOIN HistoriaClinica hc ON d.id_historia_clinica = hc.id_historia_clinica
+            WHERE hc.id_paciente = %s
+            """
+            diagnoses = db_manager.execute_query(diagnoses_query, (patient['id_paciente'],))
+            
+            # Get treatments
+            treatments_query = """
+            SELECT t.* FROM Tratamiento t
+            INNER JOIN HistoriaClinica hc ON t.id_historia_clinica = hc.id_historia_clinica
+            WHERE hc.id_paciente = %s
+            """
+            treatments = db_manager.execute_query(treatments_query, (patient['id_paciente'],))
+            
+            return render_template('patient_history.html',
+                                 patient=patient,
+                                 histories=histories,
+                                 antecedents=antecedents,
+                                 diagnoses=diagnoses,
+                                 treatments=treatments)
+        
+        return render_template('patient_history.html', patient=None)
+    
+    except Exception as e:
+        logger.error(f"Patient history error: {e}")
+        flash(f'Error loading patient history: {str(e)}', 'error')
+        return render_template('patient_history.html', patient=None)
+
+@app.route('/patient/exams')
+def patient_exams():
+    """Patient's exam results"""
+    try:
+        # Get first patient for demo
+        patient_query = "SELECT * FROM Paciente LIMIT 1"
+        patient = db_manager.execute_single_query(patient_query)
+        
+        if patient:
+            evaluations_query = """
+            SELECT ec.* FROM EvaluacionClinica ec
+            INNER JOIN HistoriaClinica hc ON ec.id_historia_clinica = hc.id_historia_clinica
+            WHERE hc.id_paciente = %s
+            ORDER BY ec.fecha_resultado DESC
+            """
+            evaluations = db_manager.execute_query(evaluations_query, (patient['id_paciente'],))
+            
+            return render_template('patient_exams.html', patient=patient, evaluations=evaluations)
+        
+        return render_template('patient_exams.html', patient=None, evaluations=[])
+    
+    except Exception as e:
+        logger.error(f"Patient exams error: {e}")
+        return render_template('patient_exams.html', patient=None, evaluations=[])
+
+@app.route('/patient/messages')
+def patient_messages():
+    """Patient messages/notifications"""
+    return render_template('patient_messages.html')
+
+@app.route('/patient/profile')
+def patient_profile():
+    """Patient profile management"""
+    try:
+        patient_query = "SELECT * FROM Paciente LIMIT 1"
+        patient = db_manager.execute_single_query(patient_query)
+        return render_template('patient_profile.html', patient=patient)
+    except Exception as e:
+        return render_template('patient_profile.html', patient=None)
+
+# Admin-specific routes
+@app.route('/admin/doctors')
+def manage_doctors():
+    """Manage doctors"""
+    try:
+        doctors_query = """
+        SELECT * FROM ProfesionalSalud 
+        WHERE rol = 'Médico'
+        ORDER BY nombres, apellidos
+        """
+        doctors = db_manager.execute_query(doctors_query)
+        return render_template('manage_doctors.html', doctors=doctors)
+    except Exception as e:
+        logger.error(f"Manage doctors error: {e}")
+        return render_template('manage_doctors.html', doctors=[])
+
+@app.route('/admin/nurses')
+def manage_nurses():
+    """Manage nurses"""
+    try:
+        nurses_query = """
+        SELECT * FROM ProfesionalSalud 
+        WHERE rol = 'Enfermero/a'
+        ORDER BY nombres, apellidos
+        """
+        nurses = db_manager.execute_query(nurses_query)
+        return render_template('manage_nurses.html', nurses=nurses)
+    except Exception as e:
+        logger.error(f"Manage nurses error: {e}")
+        return render_template('manage_nurses.html', nurses=[])
+
+@app.route('/admin/patients')
+def manage_patients():
+    """Manage patients"""
+    try:
+        patients_query = """
+        SELECT * FROM Paciente 
+        ORDER BY nombres, apellidos
+        LIMIT 50
+        """
+        patients = db_manager.execute_query(patients_query)
+        return render_template('manage_patients.html', patients=patients)
+    except Exception as e:
+        logger.error(f"Manage patients error: {e}")
+        return render_template('manage_patients.html', patients=[])
+
+@app.route('/admin/reports')
+def system_reports():
+    """System reports"""
+    return render_template('system_reports.html')
+
+@app.route('/admin/config')
+def system_config():
+    """System configuration"""
+    return render_template('system_config.html')
+
 @app.route('/clinical_history/<int:patient_id>/edit', methods=['GET', 'POST'])
 def edit_clinical_history(patient_id):
     """Edit clinical history - for doctors to add notes"""

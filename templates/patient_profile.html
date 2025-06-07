@@ -1,0 +1,221 @@
+{% extends "base_paciente.html" %}
+
+{% block title %}Mi Perfil - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-0">
+                        <i class="fas fa-user text-success me-2"></i>
+                        Mi Perfil
+                    </h2>
+                    <p class="text-muted mb-0">Información personal y configuración de cuenta</p>
+                </div>
+                <button class="btn btn-outline-success" onclick="editProfile()">
+                    <i class="fas fa-edit me-1"></i>
+                    Editar Perfil
+                </button>
+            </div>
+
+            {% if patient %}
+            <div class="row">
+                <!-- Personal Information -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-id-card me-1"></i>
+                                Información Personal
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Nombres</label>
+                                    <p class="form-control-plaintext">{{ patient.nombres }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Apellidos</label>
+                                    <p class="form-control-plaintext">{{ patient.apellidos }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Documento de Identidad</label>
+                                    <p class="form-control-plaintext">{{ patient.documento_identidad }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Edad</label>
+                                    <p class="form-control-plaintext">{{ patient.edad }} años</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Género</label>
+                                    <p class="form-control-plaintext">{{ patient.genero }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Estado Civil</label>
+                                    <p class="form-control-plaintext">{{ patient.estado_civil or 'No especificado' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-address-book me-1"></i>
+                                Información de Contacto
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <p class="form-control-plaintext">{{ patient.telefono or 'No registrado' }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email</label>
+                                    <p class="form-control-plaintext">{{ patient.email or 'No registrado' }}</p>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label">Dirección</label>
+                                    <p class="form-control-plaintext">{{ patient.direccion or 'No registrada' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Contacto de Emergencia
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Nombre del Contacto</label>
+                                    <p class="form-control-plaintext">{{ patient.contacto_emergencia or 'No registrado' }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Teléfono de Emergencia</label>
+                                    <p class="form-control-plaintext">{{ patient.telefono_emergencia or 'No registrado' }}</p>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Parentesco</label>
+                                    <p class="form-control-plaintext">{{ patient.parentesco_emergencia or 'No especificado' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Actions -->
+                <div class="col-lg-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-cog me-1"></i>
+                                Acciones Rápidas
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-success" onclick="updateContactInfo()">
+                                    <i class="fas fa-phone me-1"></i>
+                                    Actualizar Contacto
+                                </button>
+                                <button class="btn btn-outline-info" onclick="changePassword()">
+                                    <i class="fas fa-key me-1"></i>
+                                    Cambiar Contraseña
+                                </button>
+                                <button class="btn btn-outline-warning" onclick="manageNotifications()">
+                                    <i class="fas fa-bell me-1"></i>
+                                    Configurar Notificaciones
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="downloadData()">
+                                    <i class="fas fa-download me-1"></i>
+                                    Descargar Mis Datos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Statistics -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-pie me-1"></i>
+                                Estadísticas de Cuenta
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h4 class="text-success">15</h4>
+                                        <small class="text-muted">Consultas</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="text-info">8</h4>
+                                        <small class="text-muted">Exámenes</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-center">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <h4 class="text-warning">3</h4>
+                                        <small class="text-muted">Mensajes</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <h4 class="text-primary">12</h4>
+                                        <small class="text-muted">Días activo</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% else %}
+            <!-- No Patient Data -->
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No se pudo cargar el perfil</h5>
+                    <p class="text-muted">Por favor, intente nuevamente más tarde.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function editProfile() {
+    alert('Función de edición en desarrollo. Pronto podrá editar su perfil directamente.');
+}
+
+function updateContactInfo() {
+    alert('Función para actualizar información de contacto en desarrollo.');
+}
+
+function changePassword() {
+    alert('Función para cambio de contraseña en desarrollo.');
+}
+
+function manageNotifications() {
+    alert('Configuración de notificaciones en desarrollo.');
+}
+
+function downloadData() {
+    alert('Función de descarga de datos personales en desarrollo.');
+}
+</script>
+{% endblock %}

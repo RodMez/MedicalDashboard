@@ -1,0 +1,273 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Gestión de Médicos - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-0">
+                        <i class="fas fa-user-md text-warning me-2"></i>
+                        Gestión de Médicos
+                    </h2>
+                    <p class="text-muted mb-0">Administrar profesionales médicos del sistema</p>
+                </div>
+                <button class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#addDoctorModal">
+                    <i class="fas fa-plus me-1"></i>
+                    Agregar Médico
+                </button>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-md fa-2x mb-2"></i>
+                            <h4>{{ doctors|length }}</h4>
+                            <p class="mb-0">Total Médicos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <h4>{{ doctors|length }}</h4>
+                            <p class="mb-0">Activos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-stethoscope fa-2x mb-2"></i>
+                            <h4>8</h4>
+                            <p class="mb-0">Especialidades</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <i class="fas fa-calendar-check fa-2x mb-2"></i>
+                            <h4>156</h4>
+                            <p class="mb-0">Consultas Hoy</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Doctors Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-list me-1"></i>
+                            Lista de Médicos
+                        </h6>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control form-control-sm" id="searchDoctors" 
+                                   placeholder="Buscar médico..." style="width: 200px;">
+                            <select class="form-select form-select-sm" id="filterSpecialty" style="width: 150px;">
+                                <option value="">Todas las especialidades</option>
+                                <option value="Cardiología">Cardiología</option>
+                                <option value="Neurología">Neurología</option>
+                                <option value="Pediatría">Pediatría</option>
+                                <option value="Medicina General">Medicina General</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if doctors %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Especialidad</th>
+                                    <th>Registro Médico</th>
+                                    <th>Teléfono</th>
+                                    <th>Email</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for doctor in doctors %}
+                                <tr>
+                                    <td>{{ doctor.id_profesional }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-2" 
+                                                 style="width: 32px; height: 32px; font-size: 12px;">
+                                                {{ doctor.nombres[0] }}{{ doctor.apellidos[0] }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ doctor.nombres }} {{ doctor.apellidos }}</strong>
+                                                <br><small class="text-muted">{{ doctor.documento_identidad }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ doctor.especialidad or 'General' }}</span>
+                                    </td>
+                                    <td>{{ doctor.numero_registro or 'No registrado' }}</td>
+                                    <td>{{ doctor.telefono or 'No disponible' }}</td>
+                                    <td>{{ doctor.email or 'No disponible' }}</td>
+                                    <td>
+                                        <span class="badge bg-success">Activo</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" title="Ver Perfil"
+                                                    onclick="viewDoctorProfile({{ doctor.id_profesional }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning" title="Editar"
+                                                    onclick="editDoctor({{ doctor.id_profesional }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" title="Desactivar"
+                                                    onclick="deactivateDoctor({{ doctor.id_profesional }})">
+                                                <i class="fas fa-user-slash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-md fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay médicos registrados</h5>
+                        <p class="text-muted">Agregue médicos al sistema para comenzar.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Doctor Modal -->
+<div class="modal fade" id="addDoctorModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Agregar Nuevo Médico
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/admin/doctors/add">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombres" class="form-label">Nombres *</label>
+                            <input type="text" class="form-control" id="nombres" name="nombres" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="apellidos" class="form-label">Apellidos *</label>
+                            <input type="text" class="form-control" id="apellidos" name="apellidos" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="documento_identidad" class="form-label">Documento de Identidad *</label>
+                            <input type="text" class="form-control" id="documento_identidad" name="documento_identidad" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="numero_registro" class="form-label">Número de Registro Médico *</label>
+                            <input type="text" class="form-control" id="numero_registro" name="numero_registro" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="especialidad" class="form-label">Especialidad *</label>
+                            <select class="form-select" id="especialidad" name="especialidad" required>
+                                <option value="">Seleccionar especialidad</option>
+                                <option value="Medicina General">Medicina General</option>
+                                <option value="Cardiología">Cardiología</option>
+                                <option value="Neurología">Neurología</option>
+                                <option value="Pediatría">Pediatría</option>
+                                <option value="Ginecología">Ginecología</option>
+                                <option value="Dermatología">Dermatología</option>
+                                <option value="Traumatología">Traumatología</option>
+                                <option value="Psiquiatría">Psiquiatría</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="institucion" class="form-label">Institución</label>
+                            <select class="form-select" id="institucion" name="id_institucion">
+                                <option value="">Seleccionar institución</option>
+                                <option value="1">Hospital Central</option>
+                                <option value="2">Clínica San José</option>
+                                <option value="3">Centro Médico Norte</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning text-dark">
+                        <i class="fas fa-save me-1"></i>Guardar Médico
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewDoctorProfile(doctorId) {
+    alert('Ver perfil del médico ID: ' + doctorId + ' - Función en desarrollo');
+}
+
+function editDoctor(doctorId) {
+    alert('Editar médico ID: ' + doctorId + ' - Función en desarrollo');
+}
+
+function deactivateDoctor(doctorId) {
+    if (confirm('¿Está seguro de que desea desactivar este médico?')) {
+        alert('Desactivar médico ID: ' + doctorId + ' - Función en desarrollo');
+    }
+}
+
+// Search and filter functionality
+document.getElementById('searchDoctors').addEventListener('input', function() {
+    filterTable();
+});
+
+document.getElementById('filterSpecialty').addEventListener('change', function() {
+    filterTable();
+});
+
+function filterTable() {
+    const searchTerm = document.getElementById('searchDoctors').value.toLowerCase();
+    const specialtyFilter = document.getElementById('filterSpecialty').value;
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const specialtyCell = row.cells[2].textContent;
+        
+        const matchesSearch = text.includes(searchTerm);
+        const matchesSpecialty = !specialtyFilter || specialtyCell.includes(specialtyFilter);
+        
+        row.style.display = matchesSearch && matchesSpecialty ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

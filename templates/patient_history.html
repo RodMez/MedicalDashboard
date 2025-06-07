@@ -1,0 +1,226 @@
+{% extends "base_paciente.html" %}
+
+{% block title %}Mi Historia Clínica - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            {% if patient %}
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-0">
+                        <i class="fas fa-file-medical text-success me-2"></i>
+                        Mi Historia Clínica Completa
+                    </h2>
+                    <p class="text-muted mb-0">{{ patient.nombres }} {{ patient.apellidos }} - {{ patient.documento_identidad }}</p>
+                </div>
+                <button class="btn btn-success" onclick="downloadHistory()">
+                    <i class="fas fa-download me-1"></i>
+                    Descargar PDF
+                </button>
+            </div>
+
+            <!-- Patient Info Summary -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user me-1"></i>
+                        Información Personal
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Edad:</strong> {{ patient.edad }} años
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Género:</strong> {{ patient.genero }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Teléfono:</strong> {{ patient.telefono or 'No registrado' }}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Email:</strong> {{ patient.email or 'No registrado' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clinical Histories -->
+            {% if histories %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-1"></i>
+                        Historiales Clínicos ({{ histories|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for history in histories %}
+                    <div class="border rounded p-3 mb-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="text-success">
+                                <i class="fas fa-calendar me-1"></i>
+                                {{ history.fecha_admision.strftime('%d/%m/%Y') if history.fecha_admision else 'Fecha no disponible' }}
+                            </h6>
+                            <span class="badge bg-success">{{ history.institucion_nombre or 'Institución no especificada' }}</span>
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong>Motivo de Consulta:</strong>
+                            <p class="mb-1">{{ history.motivo_ingreso or 'No especificado' }}</p>
+                        </div>
+                        
+                        {% if history.observaciones %}
+                        <div class="mb-2">
+                            <strong>Observaciones:</strong>
+                            <div class="bg-light p-2 rounded">
+                                <p class="mb-0 small">{{ history.observaciones }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Antecedents -->
+            {% if antecedents %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-notes-medical me-1"></i>
+                        Antecedentes Médicos ({{ antecedents|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for antecedent in antecedents %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="text-success">Antecedentes Personales</h6>
+                            {% if antecedent.alergias %}
+                            <p><strong>Alergias:</strong> {{ antecedent.alergias }}</p>
+                            {% endif %}
+                            {% if antecedent.medicamentos %}
+                            <p><strong>Medicamentos:</strong> {{ antecedent.medicamentos }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-success">Antecedentes Familiares</h6>
+                            {% if antecedent.diabetes_familiar %}
+                            <p><strong>Diabetes:</strong> {{ antecedent.diabetes_familiar }}</p>
+                            {% endif %}
+                            {% if antecedent.cancer_familiar %}
+                            <p><strong>Cáncer:</strong> {{ antecedent.cancer_familiar }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Diagnoses -->
+            {% if diagnoses %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-stethoscope me-1"></i>
+                        Diagnósticos ({{ diagnoses|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Diagnóstico</th>
+                                    <th>Código</th>
+                                    <th>Tipo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for diagnosis in diagnoses %}
+                                <tr>
+                                    <td>{{ diagnosis.fecha_diagnostico.strftime('%d/%m/%Y') if diagnosis.fecha_diagnostico else 'N/A' }}</td>
+                                    <td>{{ diagnosis.descripcion or 'No especificado' }}</td>
+                                    <td>{{ diagnosis.codigo_icd or 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ diagnosis.tipo or 'Principal' }}</span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Treatments -->
+            {% if treatments %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-pills me-1"></i>
+                        Tratamientos ({{ treatments|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% for treatment in treatments %}
+                    <div class="border rounded p-3 mb-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-success">{{ treatment.medicamento or 'Medicamento no especificado' }}</h6>
+                                <p><strong>Dosis:</strong> {{ treatment.dosis or 'No especificada' }}</p>
+                                <p><strong>Frecuencia:</strong> {{ treatment.frecuencia or 'No especificada' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Fecha Inicio:</strong> {{ treatment.fecha_inicio.strftime('%d/%m/%Y') if treatment.fecha_inicio else 'No especificada' }}</p>
+                                <p><strong>Duración:</strong> {{ treatment.duracion or 'No especificada' }}</p>
+                                {% if treatment.observaciones %}
+                                <p><strong>Observaciones:</strong> {{ treatment.observaciones }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- No Data Message -->
+            {% if not histories and not antecedents and not diagnoses and not treatments %}
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-file-medical fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No hay información clínica disponible</h5>
+                    <p class="text-muted">Su historia clínica aparecerá aquí cuando esté disponible.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% else %}
+            <!-- No Patient Found -->
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Paciente no encontrado</h5>
+                    <p class="text-muted">No se pudo cargar la información del paciente.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadHistory() {
+    // In a real implementation, this would generate and download a PDF
+    alert('Función de descarga en desarrollo. Su historia clínica estará disponible para descarga próximamente.');
+}
+</script>
+{% endblock %}
