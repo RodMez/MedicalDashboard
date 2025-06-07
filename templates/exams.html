@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Exámenes y Resultados - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="fas fa-vial text-primary me-2"></i>
+            Exámenes y Resultados
+        </h1>
+        <div class="text-muted">
+            Total: {{ evaluations|length }} evaluaciones
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('exams') }}" class="row g-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" 
+                               class="form-control" 
+                               name="search" 
+                               value="{{ search }}" 
+                               placeholder="Buscar por paciente, instrumento o parámetro...">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <select class="form-select" name="patient_id">
+                        <option value="">Todos los pacientes</option>
+                        {% for patient in patients_with_exams %}
+                        <option value="{{ patient.id_paciente }}" 
+                                {{ 'selected' if patient.id_paciente|string == selected_patient_id }}>
+                            {{ patient.nombres }} {{ patient.apellidos }} ({{ patient.documento_identidad }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter me-1"></i>Filtrar
+                    </button>
+                </div>
+                {% if search or selected_patient_id %}
+                <div class="col-12">
+                    <a href="{{ url_for('exams') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-times me-1"></i>Limpiar filtros
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Evaluations Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-flask me-2"></i>
+                Evaluaciones Clínicas
+                {% if search %}
+                    - Resultados para "{{ search }}"
+                {% endif %}
+                {% if selected_patient_id %}
+                    - Paciente seleccionado
+                {% endif %}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if evaluations %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Paciente</th>
+                                <th>Fecha Resultado</th>
+                                <th>Instrumento</th>
+                                <th>Parámetro</th>
+                                <th>Valor</th>
+                                <th>SNOMED CT</th>
+                                <th>Historia Clínica</th>
+                                <th>Admisión</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for evaluation in evaluations %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-secondary">{{ evaluation.id_evaluacion }}</span>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">
+                                        <a href="{{ url_for('clinical_history', patient_id=evaluation.id_historia_clinica) }}" 
+                                           class="text-decoration-none">
+                                            {{ evaluation.nombres }} {{ evaluation.apellidos }}
+                                        </a>
+                                    </div>
+                                    <small class="text-muted">{{ evaluation.documento_identidad or '-' }}</small>
+                                </td>
+                                <td>
+                                    {% if evaluation.fecha_resultado %}
+                                        <div>{{ evaluation.fecha_resultado.strftime('%d/%m/%Y') }}</div>
+                                        <small class="text-muted">{{ evaluation.fecha_resultado.strftime('%H:%M') }}</small>
+                                    {% else %}
+                                        <span class="text-muted">No registrada</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if evaluation.instrumento_utilizado %}
+                                        <span class="badge bg-info">{{ evaluation.instrumento_utilizado }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ evaluation.resultado_parametro or '-' }}</div>
+                                </td>
+                                <td>
+                                    {% if evaluation.resultado_valor %}
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-success me-2">{{ evaluation.resultado_valor }}</span>
+                                            {% if evaluation.resultado_valor > 100 %}
+                                                <i class="fas fa-arrow-up text-warning" title="Valor alto"></i>
+                                            {% elif evaluation.resultado_valor < 10 %}
+                                                <i class="fas fa-arrow-down text-info" title="Valor bajo"></i>
+                                            {% else %}
+                                                <i class="fas fa-check text-success" title="Valor normal"></i>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">Sin valor</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if evaluation.cod_snomed_ct %}
+                                        <code class="small">{{ evaluation.cod_snomed_ct }}</code>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('clinical_history', patient_id=evaluation.id_historia_clinica) }}" 
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-file-medical me-1"></i>HC-{{ evaluation.id_historia_clinica }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if evaluation.fecha_admision %}
+                                        <div>{{ evaluation.fecha_admision.strftime('%d/%m/%Y') }}</div>
+                                        {% if evaluation.motivo_ingreso %}
+                                            <small class="text-muted" title="{{ evaluation.motivo_ingreso }}">
+                                                {{ evaluation.motivo_ingreso[:30] }}{{ '...' if evaluation.motivo_ingreso|length > 30 else '' }}
+                                            </small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-microscope fa-3x text-muted mb-3"></i>
+                    {% if search or selected_patient_id %}
+                        <h5>No se encontraron evaluaciones</h5>
+                        <p class="text-muted">No hay resultados para los filtros aplicados</p>
+                        <a href="{{ url_for('exams') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-1"></i>Ver todas las evaluaciones
+                        </a>
+                    {% else %}
+                        <h5>No hay evaluaciones clínicas registradas</h5>
+                        <p class="text-muted">La base de datos no contiene evaluaciones clínicas</p>
+                        <a href="{{ url_for('patients') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-users me-1"></i>Ver pacientes
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    {% if evaluations %}
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Resumen de Instrumentos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% set instruments = evaluations | groupby('instrumento_utilizado') %}
+                    {% for instrument, group in instruments %}
+                        {% if instrument %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>{{ instrument }}</span>
+                            <span class="badge bg-secondary">{{ group | list | length }}</span>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% if not any(evaluations | selectattr('instrumento_utilizado')) %}
+                        <p class="text-muted mb-0">No hay instrumentos especificados</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        Evaluaciones por Mes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% set monthly_evaluations = evaluations | selectattr('fecha_resultado') | groupby('fecha_resultado.month') %}
+                    {% for month, group in monthly_evaluations %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Mes {{ month }}</span>
+                        <span class="badge bg-secondary">{{ group | list | length }}</span>
+                    </div>
+                    {% endfor %}
+                    {% if not any(evaluations | selectattr('fecha_resultado')) %}
+                        <p class="text-muted mb-0">No hay fechas de resultado registradas</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-3">Acciones Rápidas</h6>
+                    <a href="{{ url_for('patients') }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-users me-1"></i>Lista de Pacientes
+                    </a>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[title]'));
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+        
+        // Focus search input if there's a search term
+        {% if search %}
+            document.querySelector('input[name="search"]').focus();
+        {% endif %}
+        
+        // Auto-submit form when patient selection changes
+        document.querySelector('select[name="patient_id"]').addEventListener('change', function() {
+            this.form.submit();
+        });
+    });
+</script>
+{% endblock %}

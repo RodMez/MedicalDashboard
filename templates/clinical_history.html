@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block title %}Historia Clínica - {{ patient.nombres }} {{ patient.apellidos }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Patient Header -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h4 class="mb-0">
+                        <i class="fas fa-file-medical me-2"></i>
+                        Historia Clínica
+                    </h4>
+                </div>
+                <div class="col-auto">
+                    <a href="{{ url_for('patients') }}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left me-1"></i>Volver a Pacientes
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="text-primary">{{ patient.nombres }} {{ patient.apellidos }}</h5>
+                    <div class="row g-2">
+                        <div class="col-sm-6">
+                            <small class="text-muted">ID Paciente:</small>
+                            <div><span class="badge bg-secondary">{{ patient.id_paciente }}</span></div>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted">Documento:</small>
+                            <div><code>{{ patient.documento_identidad or '-' }}</code></div>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted">Edad:</small>
+                            <div>{{ patient.edad or '-' }} años</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <small class="text-muted">Sexo:</small>
+                            <div>
+                                {% if patient.sexo %}
+                                    <span class="badge bg-{{ 'info' if patient.sexo == 'Masculino' else 'warning' if patient.sexo == 'Femenino' else 'secondary' }}">
+                                        {{ patient.sexo }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <small class="text-muted">Fecha de Nacimiento:</small>
+                            <div>{{ patient.fecha_nacimiento.strftime('%d/%m/%Y') if patient.fecha_nacimiento else '-' }}</div>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted">Ocupación:</small>
+                            <div>{{ patient.ocupacion or '-' }}</div>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted">Residencia:</small>
+                            <div>
+                                {{ patient.municipio_residencia or '-' }}
+                                {% if patient.zona_residencia %}
+                                    <small class="text-muted">({{ patient.zona_residencia }})</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted">Contacto:</small>
+                            <div>
+                                {% if patient.correo %}
+                                    <a href="mailto:{{ patient.correo }}">{{ patient.correo }}</a>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clinical History Sections -->
+    <div class="row g-4">
+        <!-- Clinical Histories -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-hospital me-2"></i>
+                        Historias Clínicas ({{ histories|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if histories %}
+                        <div class="accordion" id="historiesAccordion">
+                            {% for history in histories %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button {{ 'collapsed' if not loop.first }}" 
+                                            type="button" 
+                                            data-bs-toggle="collapse" 
+                                            data-bs-target="#history{{ history.id_historia_clinica }}"
+                                            aria-expanded="{{ 'true' if loop.first else 'false' }}">
+                                        <div class="w-100">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <strong>Historia Clínica #{{ history.id_historia_clinica }}</strong>
+                                                <small class="text-muted">
+                                                    Admisión: {{ history.fecha_admision.strftime('%d/%m/%Y %H:%M') if history.fecha_admision else 'No registrada' }}
+                                                </small>
+                                            </div>
+                                            <div class="mt-1">
+                                                <small class="text-muted">
+                                                    {{ history.motivo_ingreso[:100] }}{{ '...' if history.motivo_ingreso and history.motivo_ingreso|length > 100 else '' }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </button>
+                                </h2>
+                                <div id="history{{ history.id_historia_clinica }}" 
+                                     class="accordion-collapse collapse {{ 'show' if loop.first }}"
+                                     data-bs-parent="#historiesAccordion">
+                                    <div class="accordion-body">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Admisión:</small>
+                                                <div>{{ history.fecha_admision.strftime('%d/%m/%Y %H:%M') if history.fecha_admision else '-' }}</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Egreso:</small>
+                                                <div>{{ history.fecha_egreso.strftime('%d/%m/%Y %H:%M') if history.fecha_egreso else 'En curso' }}</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Vía de Ingreso:</small>
+                                                <div>
+                                                    {% if history.via_ingreso %}
+                                                        <span class="badge bg-{{ 'danger' if history.via_ingreso == 'Urgencia' else 'info' }}">
+                                                            {{ history.via_ingreso }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Institución:</small>
+                                                <div>{{ history.institucion_nombre or '-' }}</div>
+                                            </div>
+                                            <div class="col-12">
+                                                <small class="text-muted">Motivo de Ingreso:</small>
+                                                <div class="mt-1">{{ history.motivo_ingreso or '-' }}</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Profesional Ingreso:</small>
+                                                <div>{{ history.prof_ingreso_nombres }} {{ history.prof_ingreso_apellidos if history.prof_ingreso_nombres else '-' }}</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <small class="text-muted">Profesional Egreso:</small>
+                                                <div>{{ history.prof_egreso_nombres }} {{ history.prof_egreso_apellidos if history.prof_egreso_nombres else '-' }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-medical fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No hay historias clínicas registradas para este paciente</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Antecedents -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Antecedentes ({{ antecedents|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if antecedents %}
+                        {% for antecedent in antecedents %}
+                        <div class="border rounded p-3 mb-3">
+                            {% if antecedent.alergias %}
+                                <div class="mb-2">
+                                    <small class="text-muted">Alergias:</small>
+                                    <div>{{ antecedent.alergias }}</div>
+                                </div>
+                            {% endif %}
+                            {% if antecedent.antecedentes_familiares %}
+                                <div class="mb-2">
+                                    <small class="text-muted">Antecedentes Familiares:</small>
+                                    <div>{{ antecedent.antecedentes_familiares }}</div>
+                                </div>
+                            {% endif %}
+                            {% if antecedent.riesgos_ocupacionales %}
+                                <div class="mb-2">
+                                    <small class="text-muted">Riesgos Ocupacionales:</small>
+                                    <div>{{ antecedent.riesgos_ocupacionales }}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-shield-alt fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No hay antecedentes registrados</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Diagnoses -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-stethoscope me-2"></i>
+                        Diagnósticos ({{ diagnoses|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if diagnoses %}
+                        {% for diagnosis in diagnoses %}
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <small class="text-muted">Tipo:</small>
+                                {% if diagnosis.cod_snomed_ct %}
+                                    <code class="small">{{ diagnosis.cod_snomed_ct }}</code>
+                                {% endif %}
+                            </div>
+                            <div>{{ diagnosis.tipo_diagnostico or '-' }}</div>
+                            {% if diagnosis.descripcion %}
+                                <div class="mt-2">
+                                    <small class="text-muted">Descripción:</small>
+                                    <div>{{ diagnosis.descripcion }}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-heartbeat fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No hay diagnósticos registrados</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Treatments -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-pills me-2"></i>
+                        Tratamientos ({{ treatments|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if treatments %}
+                        {% for treatment in treatments %}
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <strong>{{ treatment.tipo_tecnologia or 'Tratamiento' }}</strong>
+                                {% if treatment.cod_snomed_ct %}
+                                    <code class="small">{{ treatment.cod_snomed_ct }}</code>
+                                {% endif %}
+                            </div>
+                            {% if treatment.descripcion %}
+                                <div class="mb-2">{{ treatment.descripcion }}</div>
+                            {% endif %}
+                            <div class="row g-2 small">
+                                {% if treatment.dosis %}
+                                    <div class="col-6">
+                                        <span class="text-muted">Dosis:</span> {{ treatment.dosis }}
+                                    </div>
+                                {% endif %}
+                                {% if treatment.frecuencia %}
+                                    <div class="col-6">
+                                        <span class="text-muted">Frecuencia:</span> {{ treatment.frecuencia }}
+                                    </div>
+                                {% endif %}
+                                {% if treatment.via_administracion %}
+                                    <div class="col-6">
+                                        <span class="text-muted">Vía:</span> {{ treatment.via_administracion }}
+                                    </div>
+                                {% endif %}
+                                {% if treatment.duracion_dias %}
+                                    <div class="col-6">
+                                        <span class="text-muted">Duración:</span> {{ treatment.duracion_dias }} días
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-prescription-bottle fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No hay tratamientos registrados</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Incapacities -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-bed me-2"></i>
+                        Incapacidades ({{ incapacities|length }})
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if incapacities %}
+                        {% for incapacity in incapacities %}
+                        <div class="border rounded p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <strong>{{ incapacity.tipo_incapacidad or 'Incapacidad' }}</strong>
+                                {% if incapacity.cod_snomed_ct %}
+                                    <code class="small">{{ incapacity.cod_snomed_ct }}</code>
+                                {% endif %}
+                            </div>
+                            {% if incapacity.dias_incapacidad %}
+                                <div>
+                                    <span class="badge bg-warning text-dark">
+                                        {{ incapacity.dias_incapacidad }} días
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-walking fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No hay incapacidades registradas</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h6 class="text-muted mb-3">Acciones Rápidas</h6>
+                    <a href="{{ url_for('exams', patient_id=patient.id_paciente) }}" class="btn btn-outline-info me-2">
+                        <i class="fas fa-vial me-1"></i>Ver Exámenes
+                    </a>
+                    <a href="{{ url_for('patients') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-users me-1"></i>Lista de Pacientes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

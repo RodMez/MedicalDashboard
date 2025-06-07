@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h2">
+            <i class="fas fa-tachometer-alt text-primary me-2"></i>
+            Dashboard Médico
+        </h1>
+        <div class="text-muted">
+            <i class="fas fa-clock me-1"></i>
+            <span id="current-time"></span>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Total Pacientes</h6>
+                            <h3 class="mb-0 text-primary">{{ stats.total_patients or 0 }}</h3>
+                        </div>
+                        <div class="text-primary fs-1">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Historias Clínicas</h6>
+                            <h3 class="mb-0 text-info">{{ stats.total_histories or 0 }}</h3>
+                        </div>
+                        <div class="text-info fs-1">
+                            <i class="fas fa-file-medical"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Total Admisiones</h6>
+                            <h3 class="mb-0 text-success">{{ stats.total_admissions or 0 }}</h3>
+                        </div>
+                        <div class="text-success fs-1">
+                            <i class="fas fa-hospital"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title text-muted mb-1">Profesionales</h6>
+                            <h3 class="mb-0 text-warning">{{ stats.total_professionals or 0 }}</h3>
+                        </div>
+                        <div class="text-warning fs-1">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="row g-4">
+        <!-- Recent Admissions -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-hospital-user me-2"></i>
+                        Admisiones Recientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_admissions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Paciente</th>
+                                        <th>Fecha</th>
+                                        <th>Vía Ingreso</th>
+                                        <th>Motivo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for admission in recent_admissions %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">
+                                                {{ admission.nombres }} {{ admission.apellidos }}
+                                            </div>
+                                            <small class="text-muted">{{ admission.documento_identidad }}</small>
+                                        </td>
+                                        <td>
+                                            {% if admission.fecha_admision %}
+                                                {{ admission.fecha_admision.strftime('%d/%m/%Y %H:%M') }}
+                                            {% else %}
+                                                <span class="text-muted">No registrada</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if admission.via_ingreso %}
+                                                <span class="badge bg-{{ 'danger' if admission.via_ingreso == 'Urgencia' else 'info' }}">
+                                                    {{ admission.via_ingreso }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>{{ admission.motivo_ingreso[:50] }}{{ '...' if admission.motivo_ingreso and admission.motivo_ingreso|length > 50 else '' }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No hay admisiones recientes registradas</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('patients') }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>Ver todos los pacientes
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Clinical Evaluations -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-vial me-2"></i>
+                        Evaluaciones Recientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_evaluations %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Paciente</th>
+                                        <th>Fecha</th>
+                                        <th>Parámetro</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for evaluation in recent_evaluations %}
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold">
+                                                {{ evaluation.nombres }} {{ evaluation.apellidos }}
+                                            </div>
+                                            <small class="text-muted">{{ evaluation.documento_identidad }}</small>
+                                        </td>
+                                        <td>
+                                            {% if evaluation.fecha_resultado %}
+                                                {{ evaluation.fecha_resultado.strftime('%d/%m/%Y') }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>{{ evaluation.resultado_parametro or '-' }}</small>
+                                        </td>
+                                        <td>
+                                            {% if evaluation.resultado_valor %}
+                                                <span class="badge bg-secondary">{{ evaluation.resultado_valor }}</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-flask fa-2x text-muted mb-3"></i>
+                            <p class="text-muted">No hay evaluaciones clínicas recientes</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('exams') }}" class="btn btn-outline-info btn-sm">
+                        <i class="fas fa-arrow-right me-1"></i>Ver todos los exámenes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Update current time
+    function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        document.getElementById('current-time').textContent = timeString;
+    }
+    
+    // Update time immediately and then every minute
+    updateTime();
+    setInterval(updateTime, 60000);
+</script>
+{% endblock %}
