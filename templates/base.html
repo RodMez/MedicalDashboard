@@ -38,6 +38,21 @@
                             <i class="fas fa-users me-1"></i>Pacientes
                         </a>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {{ 'active' if request.endpoint in ['clinical_histories', 'clinical_history'] }}" 
+                           href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-file-medical me-1"></i>Historias Clínicas
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('clinical_histories') }}">
+                                <i class="fas fa-list me-2"></i>Ver Todas</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('clinical_histories') }}?recent=true">
+                                <i class="fas fa-clock me-2"></i>Recientes</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('patients') }}">
+                                <i class="fas fa-search me-2"></i>Buscar por Paciente</a></li>
+                        </ul>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link {{ 'active' if request.endpoint == 'exams' }}" 
                            href="{{ url_for('exams') }}">

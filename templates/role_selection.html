@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Médico FHIR - Selección de Rol</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom medical CSS -->
+    <link href="{{ url_for('static', filename='css/medical.css') }}" rel="stylesheet">
+</head>
+<body class="bg-gradient">
+    <div class="container-fluid vh-100 d-flex align-items-center justify-content-center">
+        <div class="row w-100 justify-content-center">
+            <div class="col-12 text-center mb-5">
+                <div class="mb-4">
+                    <i class="fas fa-heartbeat fa-4x text-primary mb-3"></i>
+                    <h1 class="display-4 fw-bold">Sistema Médico FHIR</h1>
+                    <p class="lead text-muted">Seleccione su rol para acceder al sistema</p>
+                </div>
+            </div>
+            
+            <!-- Role Selection Cards -->
+            <div class="col-12">
+                <div class="row g-4 justify-content-center">
+                    <!-- Médico -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-lg h-100 role-card" onclick="selectRole('medico')">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-4">
+                                    <i class="fas fa-user-md fa-4x text-primary"></i>
+                                </div>
+                                <h4 class="card-title mb-3">Médico</h4>
+                                <p class="card-text text-muted">
+                                    Acceso completo a historias clínicas, diagnósticos, tratamientos y gestión de pacientes.
+                                </p>
+                                <div class="mt-4">
+                                    <span class="badge bg-primary px-3 py-2">Acceso Completo</span>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 text-center">
+                                <button class="btn btn-primary btn-lg w-100">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Ingresar como Médico
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enfermera -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-lg h-100 role-card" onclick="selectRole('enfermera')">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-4">
+                                    <i class="fas fa-user-nurse fa-4x text-info"></i>
+                                </div>
+                                <h4 class="card-title mb-3">Enfermera</h4>
+                                <p class="card-text text-muted">
+                                    Registro de signos vitales, notas de enfermería y seguimiento de pacientes.
+                                </p>
+                                <div class="mt-4">
+                                    <span class="badge bg-info px-3 py-2">Cuidado del Paciente</span>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 text-center">
+                                <button class="btn btn-info btn-lg w-100">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Ingresar como Enfermera
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paciente -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-lg h-100 role-card" onclick="selectRole('paciente')">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-4">
+                                    <i class="fas fa-user fa-4x text-success"></i>
+                                </div>
+                                <h4 class="card-title mb-3">Paciente</h4>
+                                <p class="card-text text-muted">
+                                    Consulta tu historia clínica, resultados de exámenes y citas médicas.
+                                </p>
+                                <div class="mt-4">
+                                    <span class="badge bg-success px-3 py-2">Portal Personal</span>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 text-center">
+                                <button class="btn btn-success btn-lg w-100">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Ingresar como Paciente
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Administrador -->
+                    <div class="col-lg-3 col-md-6">
+                        <div class="card border-0 shadow-lg h-100 role-card" onclick="selectRole('admin')">
+                            <div class="card-body text-center p-4">
+                                <div class="mb-4">
+                                    <i class="fas fa-user-cog fa-4x text-warning"></i>
+                                </div>
+                                <h4 class="card-title mb-3">Administrador</h4>
+                                <p class="card-text text-muted">
+                                    Gestión del sistema, usuarios, reportes y configuraciones generales.
+                                </p>
+                                <div class="mt-4">
+                                    <span class="badge bg-warning text-dark px-3 py-2">Administración</span>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 text-center">
+                                <button class="btn btn-warning btn-lg w-100 text-dark">
+                                    <i class="fas fa-sign-in-alt me-2"></i>Ingresar como Admin
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="position-fixed bottom-0 w-100 bg-dark text-center py-2">
+        <div class="container">
+            <small class="text-muted">
+                <i class="fas fa-shield-alt me-1"></i>
+                Sistema Médico FHIR &copy; 2024 - Acceso Seguro y Confidencial
+            </small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+
+    <style>
+        .bg-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .role-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-radius: 15px !important;
+        }
+        
+        .role-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.3) !important;
+        }
+        
+        .role-card:hover .card-body i {
+            transform: scale(1.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: none;
+        }
+        
+        .role-card:active {
+            transform: translateY(-5px);
+        }
+    </style>
+
+    <script>
+        function selectRole(role) {
+            const button = event.currentTarget.querySelector('button');
+            button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Accediendo...';
+            button.disabled = true;
+            
+            // Simulate loading and redirect
+            setTimeout(() => {
+                switch(role) {
+                    case 'medico':
+                        window.location.href = '/dashboard/medico';
+                        break;
+                    case 'enfermera':
+                        window.location.href = '/dashboard/enfermera';
+                        break;
+                    case 'paciente':
+                        window.location.href = '/dashboard/paciente';
+                        break;
+                    case 'admin':
+                        window.location.href = '/dashboard/admin';
+                        break;
+                }
+            }, 1000);
+        }
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            const cards = document.querySelectorAll('.role-card');
+            if (e.key >= '1' && e.key <= '4') {
+                const index = parseInt(e.key) - 1;
+                if (cards[index]) {
+                    cards[index].click();
+                }
+            }
+        });
+
+        // Add accessibility enhancements
+        document.querySelectorAll('.role-card').forEach((card, index) => {
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('role', 'button');
+            card.setAttribute('aria-label', `Seleccionar rol ${card.querySelector('h4').textContent}`);
+            
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

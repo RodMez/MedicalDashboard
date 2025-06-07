@@ -210,7 +210,7 @@
                         </div>
                         {% endif %}
                     {% endfor %}
-                    {% if not any(evaluations | selectattr('instrumento_utilizado')) %}
+                    {% if not evaluations | selectattr('instrumento_utilizado') | list %}
                         <p class="text-muted mb-0">No hay instrumentos especificados</p>
                     {% endif %}
                 </div>
@@ -233,7 +233,7 @@
                         <span class="badge bg-secondary">{{ group | list | length }}</span>
                     </div>
                     {% endfor %}
-                    {% if not any(evaluations | selectattr('fecha_resultado')) %}
+                    {% if not evaluations | selectattr('fecha_resultado') | list %}
                         <p class="text-muted mb-0">No hay fechas de resultado registradas</p>
                     {% endif %}
                 </div>

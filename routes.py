@@ -6,7 +6,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 @app.route('/')
+def role_selection():
+    """Role selection page"""
+    return render_template('role_selection.html')
+
 @app.route('/dashboard')
+@app.route('/dashboard/medico')
 def dashboard():
     """Main dashboard with medical system overview"""
     try:
