@@ -505,7 +505,8 @@ def edit_clinical_history(patient_id):
                         
                         # Prepare new observation text
                         current_obs = result['observaciones'] if result and result['observaciones'] else ''
-                        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                        from datetime import datetime as dt
+                        timestamp = dt.now().strftime('%Y-%m-%d %H:%M:%S')
                         new_obs = f"{current_obs}\n[{timestamp}] MÉDICO: {new_observation}" if current_obs else f"[{timestamp}] MÉDICO: {new_observation}"
                         
                         # Update with new observations
