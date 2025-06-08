@@ -172,6 +172,24 @@ CREATE TABLE Tratamiento (
     INDEX idx_historia_clinica (id_historia_clinica)
 );
 
+CREATE TABLE SignosVitales (
+    id_signo_vital INT NOT NULL AUTO_INCREMENT,
+    id_historia_clinica INT NOT NULL,
+    fecha_registro DATETIME NOT NULL,
+    presion_arterial VARCHAR(20),     -- Ej: '120/80'
+    frecuencia_cardiaca INT,          -- LPM
+    temperatura DECIMAL(4,1),         -- °C
+    saturacion_oxigeno INT,           -- %
+    talla DECIMAL(5,2),               -- cm o m
+    peso DECIMAL(5,2),                -- kg
+    IMC DECIMAL(5,2),                 -- Índice de masa corporal
+    observaciones TEXT,
+    PRIMARY KEY (id_signo_vital),
+    FOREIGN KEY (id_historia_clinica) REFERENCES HistoriaClinica(id_historia_clinica),
+    INDEX idx_historia_clinica (id_historia_clinica)
+);
+
+
 -- Opcional: Agregar claves foráneas para mantener integridad referencial
 -- ALTER TABLE AdmisionPaciente ADD FOREIGN KEY (id_paciente) REFERENCES Paciente(id_paciente);
 -- ALTER TABLE AdmisionPaciente ADD FOREIGN KEY (id_admisionista) REFERENCES ProfesionalSalud(id_profesional);
