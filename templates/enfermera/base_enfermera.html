@@ -14,10 +14,10 @@
 </head>
 <body>
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-info">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
-                <i class="fas fa-heartbeat me-2"></i>Sistema Médico FHIR
+            <a class="navbar-brand" href="{{ url_for('dashboard_nurse') }}">
+                <i class="fas fa-user-nurse me-2"></i>Sistema Médico - Enfermería
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -27,36 +27,27 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard' }}" 
-                           href="{{ url_for('dashboard') }}">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'dashboard_nurse' }}" 
+                           href="{{ url_for('dashboard_nurse') }}">
                             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'patients' }}" 
-                           href="{{ url_for('patients') }}">
-                            <i class="fas fa-users me-1"></i>Pacientes
+                        <a class="nav-link {{ 'active' if request.endpoint == 'nurse_patients' }}" 
+                           href="{{ url_for('nurse_patients') }}">
+                            <i class="fas fa-users me-1"></i>Mis Pacientes
                         </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {{ 'active' if request.endpoint in ['clinical_histories', 'clinical_history'] }}" 
-                           href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-file-medical me-1"></i>Historias Clínicas
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('clinical_histories') }}">
-                                <i class="fas fa-list me-2"></i>Ver Todas</a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('clinical_histories') }}?recent=true">
-                                <i class="fas fa-clock me-2"></i>Recientes</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('patients') }}">
-                                <i class="fas fa-search me-2"></i>Buscar por Paciente</a></li>
-                        </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ 'active' if request.endpoint == 'exams' }}" 
-                           href="{{ url_for('exams') }}">
-                            <i class="fas fa-vial me-1"></i>Exámenes
+                        <a class="nav-link {{ 'active' if request.endpoint == 'nurse_notes' }}" 
+                           href="{{ url_for('nurse_notes') }}">
+                            <i class="fas fa-clipboard-list me-1"></i>Notas de Enfermería
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if request.endpoint == 'vital_signs' }}" 
+                           href="{{ url_for('vital_signs') }}">
+                            <i class="fas fa-heartbeat me-1"></i>Signos Vitales
                         </a>
                     </li>
                 </ul>
@@ -64,12 +55,13 @@
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-md me-1"></i>Sistema
+                            <i class="fas fa-user-nurse me-1"></i>Enfermera Sistema
                         </a>
                         <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i>Mi Perfil</a></li>
                             <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i>Configuración</a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>Salir</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('role_selection') }}"><i class="fas fa-sign-out-alt me-2"></i>Salir</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -94,21 +86,15 @@
 
     <!-- Main Content -->
     <main class="container-fluid py-4">
-        {% block content %}
-        <div class="text-center py-5">
-            <i class="fas fa-heartbeat fa-3x text-primary mb-3"></i>
-            <h1>Sistema Médico FHIR</h1>
-            <p class="lead">Sistema de gestión médica profesional</p>
-        </div>
-        {% endblock %}
+        {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
     <footer class="bg-dark text-center py-3 mt-5">
         <div class="container">
             <p class="mb-0">
-                <i class="fas fa-heart text-danger me-1"></i>
-                Sistema Médico FHIR &copy; 2024 - Gestión Profesional de Salud
+                <i class="fas fa-heart text-info me-1"></i>
+                Sistema Médico FHIR &copy; 2024 - Portal de Enfermería
             </p>
         </div>
     </footer>

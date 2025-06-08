@@ -1,4 +1,4 @@
-{% extends "base_paciente.html" %}
+{% extends "paciente/base_paciente.html" %}
 
 {% block title %}Portal del Paciente - Sistema Médico FHIR{% endblock %}
 
@@ -78,7 +78,7 @@
                     <i class="fas fa-file-medical fa-3x text-primary mb-3"></i>
                     <h5>Mis Historias Clínicas</h5>
                     <p class="text-muted">{{ histories|length }} registros</p>
-                    <a href="#historias" class="btn btn-primary">Ver Detalles</a>
+                    <a href="{{ url_for('patient_history') }}" class="btn btn-primary">Ver Detalles</a>
                 </div>
             </div>
         </div>
@@ -88,17 +88,17 @@
                     <i class="fas fa-vial fa-3x text-info mb-3"></i>
                     <h5>Mis Exámenes</h5>
                     <p class="text-muted">{{ evaluations|length }} resultados</p>
-                    <a href="#examenes" class="btn btn-info">Ver Resultados</a>
+                    <a href="{{ url_for('patient_exams') }}" class="btn btn-info">Ver Resultados</a>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="card border-0 shadow-sm text-center">
                 <div class="card-body">
-                    <i class="fas fa-download fa-3x text-success mb-3"></i>
-                    <h5>Descargar Datos</h5>
-                    <p class="text-muted">Exportar información</p>
-                    <button class="btn btn-success" onclick="window.print()">Imprimir</button>
+                    <i class="fas fa-heartbeat fa-3x text-warning mb-3"></i>
+                    <h5>Mis Signos Vitales</h5>
+                    <p class="text-muted">{{ vital_signs|length }} registros</p>
+                    <a href="#signos-vitales" class="btn btn-warning">Ver Signos</a>
                 </div>
             </div>
         </div>
@@ -148,6 +148,103 @@
                 <div class="text-center py-4">
                     <i class="fas fa-file-medical fa-2x text-muted mb-3"></i>
                     <p class="text-muted">No tienes historias clínicas registradas</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Vital Signs Section -->
+    <div id="signos-vitales" class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-heartbeat me-2"></i>
+                Mis Últimos Signos Vitales
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if vital_signs %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Presión Arterial</th>
+                                <th>Temperatura</th>
+                                <th>Frecuencia Cardíaca</th>
+                                <th>Saturación O2</th>
+                                <th>Peso</th>
+                                <th>IMC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sign in vital_signs %}
+                            <tr>
+                                <td>
+                                    {% if sign.fecha_registro %}
+                                        {{ sign.fecha_registro.strftime('%d/%m/%Y %H:%M') }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sign.presion_arterial %}
+                                        <span class="badge bg-primary">{{ sign.presion_arterial }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sign.temperatura %}
+                                        <span class="badge bg-{{ 'success' if 36.1 <= sign.temperatura <= 37.2 else 'warning' }}">
+                                            {{ sign.temperatura }}°C
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sign.frecuencia_cardiaca %}
+                                        <span class="badge bg-{{ 'success' if 60 <= sign.frecuencia_cardiaca <= 100 else 'warning' }}">
+                                            {{ sign.frecuencia_cardiaca }} bpm
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sign.saturacion_oxigeno %}
+                                        <span class="badge bg-{{ 'success' if sign.saturacion_oxigeno >= 95 else 'danger' }}">
+                                            {{ sign.saturacion_oxigeno }}%
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sign.peso %}
+                                        {{ sign.peso }} kg
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if sign.IMC %}
+                                        <span class="badge bg-{{ 'success' if 18.5 <= sign.IMC <= 24.9 else 'warning' }}">
+                                            {{ sign.IMC }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-heartbeat fa-2x text-muted mb-3"></i>
+                    <p class="text-muted">No tienes signos vitales registrados</p>
                 </div>
             {% endif %}
         </div>

@@ -1,4 +1,4 @@
-{% extends "base_admin.html" %}
+{% extends "admin/base_admin.html" %}
 
 {% block title %}Gestión de Médicos - Sistema Médico FHIR{% endblock %}
 
@@ -71,13 +71,6 @@
                         <div class="d-flex gap-2">
                             <input type="text" class="form-control form-control-sm" id="searchDoctors" 
                                    placeholder="Buscar médico..." style="width: 200px;">
-                            <select class="form-select form-select-sm" id="filterSpecialty" style="width: 150px;">
-                                <option value="">Todas las especialidades</option>
-                                <option value="Cardiología">Cardiología</option>
-                                <option value="Neurología">Neurología</option>
-                                <option value="Pediatría">Pediatría</option>
-                                <option value="Medicina General">Medicina General</option>
-                            </select>
                         </div>
                     </div>
                 </div>
@@ -89,8 +82,7 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Nombre Completo</th>
-                                    <th>Especialidad</th>
-                                    <th>Registro Médico</th>
+                                    <th>Rol</th>
                                     <th>Teléfono</th>
                                     <th>Email</th>
                                     <th>Estado</th>
@@ -105,20 +97,18 @@
                                         <div class="d-flex align-items-center">
                                             <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-2" 
                                                  style="width: 32px; height: 32px; font-size: 12px;">
-                                                {{ doctor.nombres[0] }}{{ doctor.apellidos[0] }}
+                                                {{ doctor.nombres[0] if doctor.nombres else 'M' }}{{ doctor.apellidos[0] if doctor.apellidos else '' }}
                                             </div>
                                             <div>
                                                 <strong>{{ doctor.nombres }} {{ doctor.apellidos }}</strong>
-                                                <br><small class="text-muted">{{ doctor.documento_identidad }}</small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-info">{{ doctor.especialidad or 'General' }}</span>
+                                        <span class="badge bg-info">{{ doctor.rol }}</span>
                                     </td>
-                                    <td>{{ doctor.numero_registro or 'No registrado' }}</td>
                                     <td>{{ doctor.telefono or 'No disponible' }}</td>
-                                    <td>{{ doctor.email or 'No disponible' }}</td>
+                                    <td>{{ doctor.correo or 'No disponible' }}</td>
                                     <td>
                                         <span class="badge bg-success">Activo</span>
                                     </td>
@@ -179,43 +169,12 @@
                             <input type="text" class="form-control" id="apellidos" name="apellidos" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="documento_identidad" class="form-label">Documento de Identidad *</label>
-                            <input type="text" class="form-control" id="documento_identidad" name="documento_identidad" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="numero_registro" class="form-label">Número de Registro Médico *</label>
-                            <input type="text" class="form-control" id="numero_registro" name="numero_registro" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="especialidad" class="form-label">Especialidad *</label>
-                            <select class="form-select" id="especialidad" name="especialidad" required>
-                                <option value="">Seleccionar especialidad</option>
-                                <option value="Medicina General">Medicina General</option>
-                                <option value="Cardiología">Cardiología</option>
-                                <option value="Neurología">Neurología</option>
-                                <option value="Pediatría">Pediatría</option>
-                                <option value="Ginecología">Ginecología</option>
-                                <option value="Dermatología">Dermatología</option>
-                                <option value="Traumatología">Traumatología</option>
-                                <option value="Psiquiatría">Psiquiatría</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
                             <label for="telefono" class="form-label">Teléfono</label>
                             <input type="tel" class="form-control" id="telefono" name="telefono">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="institucion" class="form-label">Institución</label>
-                            <select class="form-select" id="institucion" name="id_institucion">
-                                <option value="">Seleccionar institución</option>
-                                <option value="1">Hospital Central</option>
-                                <option value="2">Clínica San José</option>
-                                <option value="3">Centro Médico Norte</option>
-                            </select>
+                            <label for="correo" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="correo" name="correo">
                         </div>
                     </div>
                 </div>
@@ -245,29 +204,15 @@ function deactivateDoctor(doctorId) {
     }
 }
 
-// Search and filter functionality
+// Search functionality
 document.getElementById('searchDoctors').addEventListener('input', function() {
-    filterTable();
-});
-
-document.getElementById('filterSpecialty').addEventListener('change', function() {
-    filterTable();
-});
-
-function filterTable() {
-    const searchTerm = document.getElementById('searchDoctors').value.toLowerCase();
-    const specialtyFilter = document.getElementById('filterSpecialty').value;
+    const searchTerm = this.value.toLowerCase();
     const rows = document.querySelectorAll('tbody tr');
     
     rows.forEach(row => {
         const text = row.textContent.toLowerCase();
-        const specialtyCell = row.cells[2].textContent;
-        
-        const matchesSearch = text.includes(searchTerm);
-        const matchesSpecialty = !specialtyFilter || specialtyCell.includes(specialtyFilter);
-        
-        row.style.display = matchesSearch && matchesSpecialty ? '' : 'none';
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
     });
-}
+});
 </script>
 {% endblock %}

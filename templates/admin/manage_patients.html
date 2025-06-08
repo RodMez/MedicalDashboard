@@ -1,0 +1,298 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Gestión de Pacientes - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-0">
+                        <i class="fas fa-users text-warning me-2"></i>
+                        Gestión de Pacientes
+                    </h2>
+                    <p class="text-muted mb-0">Administrar pacientes del sistema</p>
+                </div>
+                <button class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#addPatientModal">
+                    <i class="fas fa-plus me-1"></i>
+                    Agregar Paciente
+                </button>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-users fa-2x mb-2"></i>
+                            <h4>{{ patients|length }}</h4>
+                            <p class="mb-0">Total Pacientes</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-check fa-2x mb-2"></i>
+                            <h4>{{ patients|selectattr('correo')|list|length }}</h4>
+                            <p class="mb-0">Con Email</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-venus-mars fa-2x mb-2"></i>
+                            <h4>{{ patients|selectattr('sexo')|list|length }}</h4>
+                            <p class="mb-0">Con Género</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <i class="fas fa-birthday-cake fa-2x mb-2"></i>
+                            <h4>{{ patients|selectattr('edad')|list|length }}</h4>
+                            <p class="mb-0">Con Edad</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patients Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-list me-1"></i>
+                            Lista de Pacientes
+                        </h6>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control form-control-sm" id="searchPatients" 
+                                   placeholder="Buscar paciente..." style="width: 200px;">
+                            <select class="form-select form-select-sm" id="filterGender" style="width: 150px;">
+                                <option value="">Todos los géneros</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if patients %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Documento</th>
+                                    <th>Edad</th>
+                                    <th>Sexo</th>
+                                    <th>Email</th>
+                                    <th>Residencia</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for patient in patients %}
+                                <tr>
+                                    <td>{{ patient.id_paciente }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-2" 
+                                                 style="width: 32px; height: 32px; font-size: 12px;">
+                                                {{ patient.nombres[0] if patient.nombres else 'P' }}{{ patient.apellidos[0] if patient.apellidos else '' }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ patient.nombres }} {{ patient.apellidos }}</strong>
+                                                <br><small class="text-muted">{{ patient.fecha_nacimiento.strftime('%d/%m/%Y') if patient.fecha_nacimiento else 'Sin fecha' }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ patient.documento_identidad or 'No registrado' }}</td>
+                                    <td>{{ patient.edad or 'No registrada' }}</td>
+                                    <td>
+                                        {% if patient.sexo %}
+                                            <span class="badge bg-{{ 'info' if patient.sexo == 'Masculino' else 'warning' if patient.sexo == 'Femenino' else 'secondary' }}">
+                                                {{ patient.sexo }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">No especificado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ patient.correo or 'No disponible' }}</td>
+                                    <td>
+                                        {{ patient.municipio_residencia or 'No registrada' }}
+                                        {% if patient.zona_residencia %}
+                                            <br><small class="text-muted">({{ patient.zona_residencia }})</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" title="Ver Perfil"
+                                                    onclick="viewPatientProfile({{ patient.id_paciente }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning" title="Editar"
+                                                    onclick="editPatient({{ patient.id_paciente }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" title="Eliminar"
+                                                    onclick="deletePatient({{ patient.id_paciente }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay pacientes registrados</h5>
+                        <p class="text-muted">Agregue pacientes al sistema para comenzar.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Patient Modal -->
+<div class="modal fade" id="addPatientModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Agregar Nuevo Paciente
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/admin/patients/add">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombres" class="form-label">Nombres *</label>
+                            <input type="text" class="form-control" id="nombres" name="nombres" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="apellidos" class="form-label">Apellidos *</label>
+                            <input type="text" class="form-control" id="apellidos" name="apellidos" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="documento_identidad" class="form-label">Documento de Identidad *</label>
+                            <input type="text" class="form-control" id="documento_identidad" name="documento_identidad" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento</label>
+                            <input type="date" class="form-control" id="fecha_nacimiento" name="fecha_nacimiento">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sexo" class="form-label">Sexo</label>
+                            <select class="form-select" id="sexo" name="sexo">
+                                <option value="">Seleccionar</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="correo" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="correo" name="correo">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="ocupacion" class="form-label">Ocupación</label>
+                            <input type="text" class="form-control" id="ocupacion" name="ocupacion">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="municipio_residencia" class="form-label">Municipio de Residencia</label>
+                            <input type="text" class="form-control" id="municipio_residencia" name="municipio_residencia">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="zona_residencia" class="form-label">Zona de Residencia</label>
+                            <select class="form-select" id="zona_residencia" name="zona_residencia">
+                                <option value="">Seleccionar</option>
+                                <option value="Urbana">Urbana</option>
+                                <option value="Rural">Rural</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="pais_nacionalidad" class="form-label">País de Nacionalidad</label>
+                            <input type="text" class="form-control" id="pais_nacionalidad" name="pais_nacionalidad" value="Colombia">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning text-dark">
+                        <i class="fas fa-save me-1"></i>Guardar Paciente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewPatientProfile(patientId) {
+    window.location.href = `/clinical_history/${patientId}`;
+}
+
+function editPatient(patientId) {
+    alert('Editar paciente ID: ' + patientId + ' - Función en desarrollo');
+}
+
+function deletePatient(patientId) {
+    if (confirm('¿Está seguro de que desea eliminar este paciente? Esta acción no se puede deshacer.')) {
+        alert('Eliminar paciente ID: ' + patientId + ' - Función en desarrollo');
+    }
+}
+
+// Search and filter functionality
+document.getElementById('searchPatients').addEventListener('input', function() {
+    filterTable();
+});
+
+document.getElementById('filterGender').addEventListener('change', function() {
+    filterTable();
+});
+
+function filterTable() {
+    const searchTerm = document.getElementById('searchPatients').value.toLowerCase();
+    const genderFilter = document.getElementById('filterGender').value;
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        const genderCell = row.cells[4].textContent;
+        
+        const matchesSearch = text.includes(searchTerm);
+        const matchesGender = !genderFilter || genderCell.includes(genderFilter);
+        
+        row.style.display = matchesSearch && matchesGender ? '' : 'none';
+    });
+}
+
+// Auto-calculate age from birth date
+document.getElementById('fecha_nacimiento').addEventListener('change', function() {
+    const birthDate = new Date(this.value);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    
+    // You could add an age field to display this
+    console.log('Edad calculada:', age);
+});
+</script>
+{% endblock %}

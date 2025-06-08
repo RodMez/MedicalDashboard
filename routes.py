@@ -65,7 +65,7 @@ def dashboard():
         """
         recent_evaluations = db_manager.execute_query(recent_evaluations_query)
         
-        return render_template('dashboard.html', 
+        return render_template('medico/dashboard.html', 
                              stats=stats, 
                              recent_admissions=recent_admissions,
                              recent_evaluations=recent_evaluations)
@@ -73,7 +73,7 @@ def dashboard():
     except Exception as e:
         logger.error(f"Dashboard error: {e}")
         flash(f'Error loading dashboard: {str(e)}', 'error')
-        return render_template('dashboard.html', stats={}, recent_admissions=[], recent_evaluations=[])
+        return render_template('medico/dashboard.html', stats={}, recent_admissions=[], recent_evaluations=[])
 
 @app.route('/patients')
 def patients():
@@ -143,6 +143,74 @@ def patients():
         flash(f'Error loading patients: {str(e)}', 'error')
         return render_template('patients.html', patients=[], search='', page=1, total_pages=1, total_count=0)
 
+@app.route('/nurse/patients')
+def nurse_patients():
+    """Nurse patients list - same as patients but with nurse template"""
+    try:
+        search = request.args.get('search', '')
+        page = int(request.args.get('page', 1))
+        per_page = 20
+        offset = (page - 1) * per_page
+        
+        # Base query for patients
+        base_query = """
+        SELECT p.id_paciente, p.nombres, p.apellidos, p.documento_identidad,
+               p.fecha_nacimiento, p.edad, p.sexo, p.ocupacion, p.correo,
+               p.municipio_residencia, p.zona_residencia
+        FROM Paciente p
+        """
+        
+        # Add search conditions if search term provided
+        if search:
+            search_query = base_query + """
+            WHERE p.nombres LIKE %s 
+               OR p.apellidos LIKE %s 
+               OR p.documento_identidad LIKE %s
+               OR CONCAT(p.nombres, ' ', p.apellidos) LIKE %s
+            ORDER BY p.nombres, p.apellidos
+            LIMIT %s OFFSET %s
+            """
+            search_term = f'%{search}%'
+            patients_list = db_manager.execute_query(search_query, 
+                                                   (search_term, search_term, search_term, search_term, per_page, offset))
+            
+            # Count total for pagination
+            count_query = """
+            SELECT COUNT(*) as count FROM Paciente p
+            WHERE p.nombres LIKE %s 
+               OR p.apellidos LIKE %s 
+               OR p.documento_identidad LIKE %s
+               OR CONCAT(p.nombres, ' ', p.apellidos) LIKE %s
+            """
+            count_result = db_manager.execute_single_query(count_query, 
+                                                         (search_term, search_term, search_term, search_term))
+        else:
+            # Get all patients with pagination
+            patients_query = base_query + """
+            ORDER BY p.nombres, p.apellidos
+            LIMIT %s OFFSET %s
+            """
+            patients_list = db_manager.execute_query(patients_query, (per_page, offset))
+            
+            # Count total for pagination
+            count_query = "SELECT COUNT(*) as count FROM Paciente"
+            count_result = db_manager.execute_single_query(count_query)
+        
+        total_count = count_result['count'] if count_result else 0
+        total_pages = (total_count + per_page - 1) // per_page
+        
+        return render_template('enfermera/nurse_patients.html', 
+                             patients=patients_list, 
+                             search=search,
+                             page=page,
+                             total_pages=total_pages,
+                             total_count=total_count)
+    
+    except Exception as e:
+        logger.error(f"Nurse patients page error: {e}")
+        flash(f'Error loading patients: {str(e)}', 'error')
+        return render_template('enfermera/nurse_patients.html', patients=[], search='', page=1, total_pages=1, total_count=0)
+
 @app.route('/clinical_history/<int:patient_id>')
 def clinical_history(patient_id):
     """Clinical history details for a specific patient"""
@@ -208,7 +276,7 @@ def clinical_history(patient_id):
         """
         incapacities = db_manager.execute_query(incapacities_query, (patient_id,))
         
-        return render_template('clinical_history.html',
+        return render_template('medico/clinical_history.html',
                              patient=patient,
                              histories=histories,
                              antecedents=antecedents,
@@ -326,7 +394,7 @@ def dashboard_nurse():
         """
         attention_needed = db_manager.execute_query(attention_needed_query)
         
-        return render_template('dashboard_nurse.html', 
+        return render_template('enfermera/dashboard_nurse.html', 
                              stats=stats, 
                              recent_admissions=recent_admissions,
                              attention_needed=attention_needed)
@@ -334,7 +402,7 @@ def dashboard_nurse():
     except Exception as e:
         logger.error(f"Nurse dashboard error: {e}")
         flash(f'Error loading nurse dashboard: {str(e)}', 'error')
-        return render_template('dashboard_nurse.html', stats={}, recent_admissions=[], attention_needed=[])
+        return render_template('enfermera/dashboard_nurse.html', stats={}, recent_admissions=[], attention_needed=[])
 
 @app.route('/dashboard/paciente')
 def dashboard_patient():
@@ -371,19 +439,31 @@ def dashboard_patient():
             """
             evaluations = db_manager.execute_query(evaluations_query, (patient['id_paciente'],))
             
+            # Get vital signs
+            vital_signs_query = """
+            SELECT sv.* FROM SignosVitales sv
+            INNER JOIN HistoriaClinica hc ON sv.id_historia_clinica = hc.id_historia_clinica
+            WHERE hc.id_paciente = %s
+            ORDER BY sv.fecha_registro DESC
+            LIMIT 5
+            """
+            vital_signs = db_manager.execute_query(vital_signs_query, (patient['id_paciente'],))
+            
         else:
             histories = []
             evaluations = []
+            vital_signs = []
             
-        return render_template('dashboard_patient.html',
+        return render_template('paciente/dashboard_patient.html',
                              patient=patient,
                              histories=histories,
-                             evaluations=evaluations)
+                             evaluations=evaluations,
+                             vital_signs=vital_signs)
     
     except Exception as e:
         logger.error(f"Patient dashboard error: {e}")
         flash(f'Error loading patient dashboard: {str(e)}', 'error')
-        return render_template('dashboard_patient.html', patient=None, histories=[], evaluations=[])
+        return render_template('paciente/dashboard_patient.html', patient=None, histories=[], evaluations=[], vital_signs=[])
 
 @app.route('/dashboard/admin')
 def dashboard_admin():
@@ -418,14 +498,14 @@ def dashboard_admin():
         """
         recent_activity = db_manager.execute_query(activity_query)
         
-        return render_template('dashboard_admin.html',
+        return render_template('admin/dashboard_admin.html',
                              stats=stats,
                              recent_activity=recent_activity)
     
     except Exception as e:
         logger.error(f"Admin dashboard error: {e}")
         flash(f'Error loading admin dashboard: {str(e)}', 'error')
-        return render_template('dashboard_admin.html', stats={}, recent_activity=[])
+        return render_template('admin/dashboard_admin.html', stats={}, recent_activity=[])
 
 @app.route('/clinical_histories')
 def clinical_histories():
@@ -497,37 +577,103 @@ def nurse_notes():
         """
         notes = db_manager.execute_query(notes_query)
         
-        return render_template('nurse_notes.html', notes=notes)
+        return render_template('enfermera/nurse_notes.html', notes=notes)
     
     except Exception as e:
         logger.error(f"Nurse notes error: {e}")
         flash(f'Error loading nurse notes: {str(e)}', 'error')
-        return render_template('nurse_notes.html', notes=[])
+        return render_template('enfermera/nurse_notes.html', notes=[])
 
-@app.route('/nurse/antecedents')
-def add_antecedents():
-    """Add antecedents for patients"""
-    try:
-        # Get patients without antecedents
-        patients_query = """
-        SELECT p.id_paciente, p.nombres, p.apellidos, p.documento_identidad
-        FROM Paciente p
-        ORDER BY p.nombres, p.apellidos
-        LIMIT 20
-        """
-        patients = db_manager.execute_query(patients_query)
-        
-        return render_template('add_antecedents.html', patients=patients)
-    
-    except Exception as e:
-        logger.error(f"Add antecedents error: {e}")
-        flash(f'Error loading antecedents page: {str(e)}', 'error')
-        return render_template('add_antecedents.html', patients=[])
-
-@app.route('/nurse/vital-signs')
+@app.route('/vital_signs')
 def vital_signs():
     """Vital signs management"""
-    return render_template('vital_signs.html')
+    try:
+        # Get recent vital signs
+        vital_signs_query = """
+        SELECT sv.*, p.nombres, p.apellidos, p.documento_identidad
+        FROM SignosVitales sv
+        INNER JOIN HistoriaClinica hc ON sv.id_historia_clinica = hc.id_historia_clinica
+        INNER JOIN Paciente p ON hc.id_paciente = p.id_paciente
+        ORDER BY sv.fecha_registro DESC
+        LIMIT 50
+        """
+        vital_signs = db_manager.execute_query(vital_signs_query)
+        
+        # Get patients for dropdown
+        patients_query = "SELECT id_paciente, nombres, apellidos,documento_identidad FROM Paciente ORDER BY nombres, apellidos"
+        patients = db_manager.execute_query(patients_query)
+        
+        return render_template('enfermera/vital_signs.html', vital_signs=vital_signs, patients=patients)
+    
+    except Exception as e:
+        logger.error(f"Vital signs error: {e}")
+        flash(f'Error loading vital signs: {str(e)}', 'error')
+        return render_template('enfermera/vital_signs.html', vital_signs=[], patients=[])
+
+@app.route('/add_vital_signs', methods=['POST'])
+def add_vital_signs():
+    """Add vital signs for a patient"""
+    try:
+        patient_id = request.form.get('patient_id')
+        presion_arterial = request.form.get('presion_arterial')
+        frecuencia_cardiaca = request.form.get('frecuencia_cardiaca')
+        temperatura = request.form.get('temperatura')
+        saturacion_oxigeno = request.form.get('saturacion_oxigeno')
+        peso = request.form.get('peso')
+        talla = request.form.get('talla')
+        observaciones = request.form.get('observaciones')
+        
+        # Calculate IMC if weight and height are provided
+        imc = None
+        if peso and talla:
+            peso_val = float(peso)
+            talla_val = float(talla) / 100  # Convert cm to m
+            imc = peso_val / (talla_val * talla_val)
+        
+        # Get or create a clinical history for this patient
+        history_query = """
+        SELECT id_historia_clinica FROM HistoriaClinica 
+        WHERE id_paciente = %s 
+        ORDER BY id_historia_clinica DESC 
+        LIMIT 1
+        """
+        history = db_manager.execute_single_query(history_query, (patient_id,))
+        
+        if not history:
+            # Create a new clinical history
+            with db_manager.get_connection() as conn:
+                with conn.cursor() as cursor:
+                    create_history_query = """
+                    INSERT INTO HistoriaClinica (id_paciente) VALUES (%s)
+                    """
+                    cursor.execute(create_history_query, (patient_id,))
+                    history_id = cursor.lastrowid
+        else:
+            history_id = history['id_historia_clinica']
+        
+        # Insert vital signs
+        with db_manager.get_connection() as conn:
+            with conn.cursor() as cursor:
+                insert_query = """
+                INSERT INTO SignosVitales (
+                    id_historia_clinica, fecha_registro, presion_arterial, 
+                    frecuencia_cardiaca, temperatura, saturacion_oxigeno, 
+                    peso, talla, IMC, observaciones
+                ) VALUES (%s, NOW(), %s, %s, %s, %s, %s, %s, %s, %s)
+                """
+                cursor.execute(insert_query, (
+                    history_id, presion_arterial, frecuencia_cardiaca, 
+                    temperatura, saturacion_oxigeno, peso, talla, imc, observaciones
+                ))
+                conn.commit()
+        
+        flash('Signos vitales registrados exitosamente', 'success')
+        return redirect(url_for('vital_signs'))
+    
+    except Exception as e:
+        logger.error(f"Add vital signs error: {e}")
+        flash(f'Error registrando signos vitales: {str(e)}', 'error')
+        return redirect(url_for('vital_signs'))
 
 # Patient-specific routes
 @app.route('/patient/history')
@@ -575,19 +721,29 @@ def patient_history():
             """
             treatments = db_manager.execute_query(treatments_query, (patient['id_paciente'],))
             
-            return render_template('patient_history.html',
+            # Get vital signs
+            vital_signs_query = """
+            SELECT sv.* FROM SignosVitales sv
+            INNER JOIN HistoriaClinica hc ON sv.id_historia_clinica = hc.id_historia_clinica
+            WHERE hc.id_paciente = %s
+            ORDER BY sv.fecha_registro DESC
+            """
+            vital_signs = db_manager.execute_query(vital_signs_query, (patient['id_paciente'],))
+            
+            return render_template('paciente/patient_history.html',
                                  patient=patient,
                                  histories=histories,
                                  antecedents=antecedents,
                                  diagnoses=diagnoses,
-                                 treatments=treatments)
+                                 treatments=treatments,
+                                 vital_signs=vital_signs)
         
-        return render_template('patient_history.html', patient=None)
+        return render_template('paciente/patient_history.html', patient=None)
     
     except Exception as e:
         logger.error(f"Patient history error: {e}")
         flash(f'Error loading patient history: {str(e)}', 'error')
-        return render_template('patient_history.html', patient=None)
+        return render_template('paciente/patient_history.html', patient=None)
 
 @app.route('/patient/exams')
 def patient_exams():
@@ -606,18 +762,18 @@ def patient_exams():
             """
             evaluations = db_manager.execute_query(evaluations_query, (patient['id_paciente'],))
             
-            return render_template('patient_exams.html', patient=patient, evaluations=evaluations)
+            return render_template('paciente/patient_exams.html', patient=patient, evaluations=evaluations)
         
-        return render_template('patient_exams.html', patient=None, evaluations=[])
+        return render_template('paciente/patient_exams.html', patient=None, evaluations=[])
     
     except Exception as e:
         logger.error(f"Patient exams error: {e}")
-        return render_template('patient_exams.html', patient=None, evaluations=[])
+        return render_template('paciente/patient_exams.html', patient=None, evaluations=[])
 
 @app.route('/patient/messages')
 def patient_messages():
     """Patient messages/notifications"""
-    return render_template('patient_messages.html')
+    return render_template('paciente/patient_messages.html')
 
 @app.route('/patient/profile')
 def patient_profile():
@@ -625,9 +781,9 @@ def patient_profile():
     try:
         patient_query = "SELECT * FROM Paciente LIMIT 1"
         patient = db_manager.execute_single_query(patient_query)
-        return render_template('patient_profile.html', patient=patient)
+        return render_template('paciente/patient_profile.html', patient=patient)
     except Exception as e:
-        return render_template('patient_profile.html', patient=None)
+        return render_template('paciente/patient_profile.html', patient=None)
 
 # Admin-specific routes
 @app.route('/admin/doctors')
@@ -640,10 +796,10 @@ def manage_doctors():
         ORDER BY nombres, apellidos
         """
         doctors = db_manager.execute_query(doctors_query)
-        return render_template('manage_doctors.html', doctors=doctors)
+        return render_template('admin/manage_doctors.html', doctors=doctors)
     except Exception as e:
         logger.error(f"Manage doctors error: {e}")
-        return render_template('manage_doctors.html', doctors=[])
+        return render_template('admin/manage_doctors.html', doctors=[])
 
 @app.route('/admin/nurses')
 def manage_nurses():
@@ -655,10 +811,10 @@ def manage_nurses():
         ORDER BY nombres, apellidos
         """
         nurses = db_manager.execute_query(nurses_query)
-        return render_template('manage_nurses.html', nurses=nurses)
+        return render_template('admin/manage_nurses.html', nurses=nurses)
     except Exception as e:
         logger.error(f"Manage nurses error: {e}")
-        return render_template('manage_nurses.html', nurses=[])
+        return render_template('admin/manage_nurses.html', nurses=[])
 
 @app.route('/admin/patients')
 def manage_patients():
@@ -670,20 +826,20 @@ def manage_patients():
         LIMIT 50
         """
         patients = db_manager.execute_query(patients_query)
-        return render_template('manage_patients.html', patients=patients)
+        return render_template('admin/manage_patients.html', patients=patients)
     except Exception as e:
         logger.error(f"Manage patients error: {e}")
-        return render_template('manage_patients.html', patients=[])
+        return render_template('admin/manage_patients.html', patients=[])
 
 @app.route('/admin/reports')
 def system_reports():
     """System reports"""
-    return render_template('system_reports.html')
+    return render_template('admin/system_reports.html')
 
 @app.route('/admin/config')
 def system_config():
     """System configuration"""
-    return render_template('system_config.html')
+    return render_template('admin/system_config.html')
 
 @app.route('/clinical_history/<int:patient_id>/edit', methods=['GET', 'POST'])
 def edit_clinical_history(patient_id):
@@ -738,10 +894,10 @@ def edit_clinical_history(patient_id):
 @app.errorhandler(404)
 def not_found_error(error):
     """Handle 404 errors"""
-    return render_template('base.html'), 404
+    return render_template('shared/base.html'), 404
 
 @app.errorhandler(500)
 def internal_error(error):
     """Handle 500 errors"""
     logger.error(f"Internal server error: {error}")
-    return render_template('base.html'), 500
+    return render_template('shared/base.html'), 500

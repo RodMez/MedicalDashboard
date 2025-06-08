@@ -1,4 +1,4 @@
-{% extends "base_admin.html" %}
+{% extends "admin/base_admin.html" %}
 
 {% block title %}Dashboard Administrador - Sistema Médico FHIR{% endblock %}
 
@@ -140,6 +140,12 @@
                                     <td><span class="badge bg-warning">{{ stats.tratamiento or 0 }}</span></td>
                                     <td><i class="fas fa-check-circle text-success"></i></td>
                                     <td>Medicamentos y terapias</td>
+                                </tr>
+                                <tr>
+                                    <td><i class="fas fa-heartbeat me-2"></i>Signos Vitales</td>
+                                    <td><span class="badge bg-info">{{ stats.signosvitales or 0 }}</span></td>
+                                    <td><i class="fas fa-check-circle text-success"></i></td>
+                                    <td>Registros de signos vitales</td>
                                 </tr>
                             </tbody>
                         </table>

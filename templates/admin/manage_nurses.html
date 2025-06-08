@@ -1,0 +1,218 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Gestión de Enfermeras - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-0">
+                        <i class="fas fa-user-nurse text-warning me-2"></i>
+                        Gestión de Enfermeras
+                    </h2>
+                    <p class="text-muted mb-0">Administrar personal de enfermería del sistema</p>
+                </div>
+                <button class="btn btn-warning text-dark" data-bs-toggle="modal" data-bs-target="#addNurseModal">
+                    <i class="fas fa-plus me-1"></i>
+                    Agregar Enfermera
+                </button>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-user-nurse fa-2x mb-2"></i>
+                            <h4>{{ nurses|length }}</h4>
+                            <p class="mb-0">Total Enfermeras</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <h4>{{ nurses|length }}</h4>
+                            <p class="mb-0">Activas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-heartbeat fa-2x mb-2"></i>
+                            <h4>24</h4>
+                            <p class="mb-0">Turnos Hoy</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                            <h4>89</h4>
+                            <p class="mb-0">Notas Hoy</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nurses Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-list me-1"></i>
+                            Lista de Enfermeras
+                        </h6>
+                        <div class="d-flex gap-2">
+                            <input type="text" class="form-control form-control-sm" id="searchNurses" 
+                                   placeholder="Buscar enfermera..." style="width: 200px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if nurses %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Rol</th>
+                                    <th>Teléfono</th>
+                                    <th>Email</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for nurse in nurses %}
+                                <tr>
+                                    <td>{{ nurse.id_profesional }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-info rounded-circle text-white d-flex align-items-center justify-content-center me-2" 
+                                                 style="width: 32px; height: 32px; font-size: 12px;">
+                                                {{ nurse.nombres[0] if nurse.nombres else 'E' }}{{ nurse.apellidos[0] if nurse.apellidos else '' }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ nurse.nombres }} {{ nurse.apellidos }}</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ nurse.rol }}</span>
+                                    </td>
+                                    <td>{{ nurse.telefono or 'No disponible' }}</td>
+                                    <td>{{ nurse.correo or 'No disponible' }}</td>
+                                    <td>
+                                        <span class="badge bg-success">Activa</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button class="btn btn-outline-primary" title="Ver Perfil"
+                                                    onclick="viewNurseProfile({{ nurse.id_profesional }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning" title="Editar"
+                                                    onclick="editNurse({{ nurse.id_profesional }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" title="Desactivar"
+                                                    onclick="deactivateNurse({{ nurse.id_profesional }})">
+                                                <i class="fas fa-user-slash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-user-nurse fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay enfermeras registradas</h5>
+                        <p class="text-muted">Agregue enfermeras al sistema para comenzar.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Nurse Modal -->
+<div class="modal fade" id="addNurseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-plus me-2"></i>
+                    Agregar Nueva Enfermera
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="/admin/nurses/add">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombres" class="form-label">Nombres *</label>
+                            <input type="text" class="form-control" id="nombres" name="nombres" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="apellidos" class="form-label">Apellidos *</label>
+                            <input type="text" class="form-control" id="apellidos" name="apellidos" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="correo" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="correo" name="correo">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning text-dark">
+                        <i class="fas fa-save me-1"></i>Guardar Enfermera
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function viewNurseProfile(nurseId) {
+    alert('Ver perfil de la enfermera ID: ' + nurseId + ' - Función en desarrollo');
+}
+
+function editNurse(nurseId) {
+    alert('Editar enfermera ID: ' + nurseId + ' - Función en desarrollo');
+}
+
+function deactivateNurse(nurseId) {
+    if (confirm('¿Está seguro de que desea desactivar esta enfermera?')) {
+        alert('Desactivar enfermera ID: ' + nurseId + ' - Función en desarrollo');
+    }
+}
+
+// Search functionality
+document.getElementById('searchNurses').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

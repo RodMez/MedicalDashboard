@@ -1,0 +1,350 @@
+{% extends "enfermera/base_enfermera.html" %}
+
+{% block title %}Signos Vitales - Sistema Médico FHIR{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="h3 mb-0">
+                        <i class="fas fa-heartbeat text-info me-2"></i>
+                        Registro de Signos Vitales
+                    </h2>
+                    <p class="text-muted mb-0">Monitoreo y registro de signos vitales de pacientes</p>
+                </div>
+                <button class="btn btn-info" data-bs-toggle="modal" data-bs-target="#addVitalSignsModal">
+                    <i class="fas fa-plus me-1"></i>
+                    Registrar Signos
+                </button>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-heart fa-2x mb-2"></i>
+                            <h6>Presión Arterial</h6>
+                            <p class="mb-0 small">Monitoreo continuo</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-thermometer-half fa-2x mb-2"></i>
+                            <h6>Temperatura</h6>
+                            <p class="mb-0 small">Control térmico</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body text-center">
+                            <i class="fas fa-lungs fa-2x mb-2"></i>
+                            <h6>Respiración</h6>
+                            <p class="mb-0 small">Frecuencia respiratoria</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <i class="fas fa-heartbeat fa-2x mb-2"></i>
+                            <h6>Pulso</h6>
+                            <p class="mb-0 small">Frecuencia cardíaca</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Records -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-line me-1"></i>
+                        Registros Recientes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if vital_signs %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Fecha/Hora</th>
+                                    <th>Paciente</th>
+                                    <th>Presión Arterial</th>
+                                    <th>Temperatura</th>
+                                    <th>Pulso</th>
+                                    <th>Sat. O2</th>
+                                    <th>Peso</th>
+                                    <th>Talla</th>
+                                    <th>IMC</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sign in vital_signs %}
+                                <tr>
+                                    <td>
+                                        {{ sign.fecha_registro.strftime('%d/%m/%Y %H:%M') if sign.fecha_registro else '-' }}
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">{{ sign.nombres }} {{ sign.apellidos }}</div>
+                                        <small class="text-muted">{{ sign.documento_identidad }}</small>
+                                    </td>
+                                    <td>
+                                        {% if sign.presion_arterial %}
+                                            <span class="badge bg-primary">{{ sign.presion_arterial }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sign.temperatura %}
+                                            <span class="badge bg-{{ 'success' if 36.1 <= sign.temperatura <= 37.2 else 'warning' }}">
+                                                {{ sign.temperatura }}°C
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sign.frecuencia_cardiaca %}
+                                            <span class="badge bg-{{ 'success' if 60 <= sign.frecuencia_cardiaca <= 100 else 'warning' }}">
+                                                {{ sign.frecuencia_cardiaca }} bpm
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sign.saturacion_oxigeno %}
+                                            <span class="badge bg-{{ 'success' if sign.saturacion_oxigeno >= 95 else 'danger' }}">
+                                                {{ sign.saturacion_oxigeno }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sign.peso %}
+                                            {{ sign.peso }} kg
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sign.talla %}
+                                            {{ sign.talla }} cm
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if sign.IMC %}
+                                            <span class="badge bg-{{ 'success' if 18.5 <= sign.IMC <= 24.9 else 'warning' }}">
+                                                {{ sign.IMC }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-check-circle text-success" title="Registrado"></i>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-heartbeat fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">No hay signos vitales registrados</p>
+                        <p class="small text-muted">Los signos vitales registrados aparecerán aquí</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Vital Signs Modal -->
+<div class="modal fade" id="addVitalSignsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-heartbeat me-2"></i>
+                    Registrar Signos Vitales
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('add_vital_signs') }}">
+                <div class="modal-body">
+                    <!-- Patient Selection -->
+                    <div class="mb-4">
+                        <label for="patient_id" class="form-label">Seleccionar Paciente *</label>
+                        <select class="form-select" id="patient_id" name="patient_id" required>
+                            <option value="">Seleccionar paciente...</option>
+                            {% for patient in patients %}
+                            <option value="{{ patient.id_paciente }}">
+                                {{ patient.nombres }} {{ patient.apellidos }} - {{ patient.documento_identidad }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Vital Signs -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="presion_arterial" class="form-label">Presión Arterial</label>
+                            <input type="text" class="form-control" id="presion_arterial" 
+                                   name="presion_arterial" placeholder="120/80" pattern="[0-9]+/[0-9]+">
+                            <div class="form-text">Formato: sistólica/diastólica (ej: 120/80)</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="temperatura" class="form-label">Temperatura</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="temperatura" 
+                                       name="temperatura" min="35" max="42" step="0.1" placeholder="36.5">
+                                <span class="input-group-text">°C</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="frecuencia_cardiaca" class="form-label">Frecuencia Cardíaca</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="frecuencia_cardiaca" 
+                                       name="frecuencia_cardiaca" min="30" max="200" placeholder="80">
+                                <span class="input-group-text">bpm</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="saturacion_oxigeno" class="form-label">Saturación de O2</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="saturacion_oxigeno" 
+                                       name="saturacion_oxigeno" min="70" max="100" placeholder="98">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="peso" class="form-label">Peso</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="peso" 
+                                       name="peso" min="1" max="300" step="0.1" placeholder="70">
+                                <span class="input-group-text">kg</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="talla" class="form-label">Talla</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="talla" 
+                                       name="talla" min="50" max="250" placeholder="170">
+                                <span class="input-group-text">cm</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Information -->
+                    <div class="mb-3">
+                        <label for="observaciones" class="form-label">Observaciones</label>
+                        <textarea class="form-control" id="observaciones" name="observaciones" rows="3" 
+                                  placeholder="Observaciones adicionales sobre el estado del paciente"></textarea>
+                    </div>
+                    
+                    <!-- Alert Thresholds -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Valores de Referencia
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small>
+                                    <strong>Presión Arterial:</strong> 90-140/60-90 mmHg<br>
+                                    <strong>Temperatura:</strong> 36.1-37.2°C<br>
+                                    <strong>Frecuencia Cardíaca:</strong> 60-100 bpm
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <small>
+                                    <strong>Saturación O2:</strong> >95%<br>
+                                    <strong>IMC Normal:</strong> 18.5-24.9
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="fas fa-save me-1"></i>Registrar Signos
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-calculate IMC when weight and height are entered
+document.addEventListener('DOMContentLoaded', function() {
+    const pesoInput = document.getElementById('peso');
+    const tallaInput = document.getElementById('talla');
+    
+    function calculateIMC() {
+        const peso = parseFloat(pesoInput.value);
+        const talla = parseFloat(tallaInput.value);
+        
+        if (peso && talla) {
+            const tallaM = talla / 100; // Convert cm to m
+            const imc = peso / (tallaM * tallaM);
+            
+            // You could add an IMC display field here if needed
+            console.log('IMC calculado:', imc.toFixed(1));
+        }
+    }
+    
+    pesoInput.addEventListener('input', calculateIMC);
+    tallaInput.addEventListener('input', calculateIMC);
+    
+    // Auto-validate vital signs and show alerts
+    const inputs = document.querySelectorAll('input[type="number"]');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            validateVitalSign(this);
+        });
+    });
+});
+
+function validateVitalSign(input) {
+    const value = parseFloat(input.value);
+    const name = input.name;
+    let isNormal = true;
+    
+    // Define normal ranges
+    const ranges = {
+        'temperatura': {min: 36.1, max: 37.2},
+        'frecuencia_cardiaca': {min: 60, max: 100},
+        'saturacion_oxigeno': {min: 95, max: 100}
+    };
+    
+    if (ranges[name]) {
+        if (value < ranges[name].min || value > ranges[name].max) {
+            input.classList.add('border-warning');
+            isNormal = false;
+        } else {
+            input.classList.remove('border-warning');
+        }
+    }
+    
+    return isNormal;
+}
+</script>
+{% endblock %}

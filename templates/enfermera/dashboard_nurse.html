@@ -1,4 +1,4 @@
-{% extends "base_enfermera.html" %}
+{% extends "enfermera/base_enfermera.html" %}
 
 {% block title %}Dashboard Enfermería - Sistema Médico FHIR{% endblock %}
 
@@ -180,7 +180,7 @@
                     {% endif %}
                 </div>
                 <div class="card-footer">
-                    <a href="{{ url_for('patients') }}" class="btn btn-outline-info btn-sm">
+                    <a href="{{ url_for('nurse_patients') }}" class="btn btn-outline-info btn-sm">
                         <i class="fas fa-users me-1"></i>Ver todos los pacientes
                     </a>
                 </div>
@@ -194,14 +194,14 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <h6 class="text-muted mb-3">Acciones Rápidas</h6>
-                    <a href="{{ url_for('patients') }}" class="btn btn-primary me-2">
+                    <a href="{{ url_for('nurse_patients') }}" class="btn btn-primary me-2">
                         <i class="fas fa-users me-1"></i>Lista de Pacientes
                     </a>
-                    <a href="{{ url_for('clinical_histories') }}" class="btn btn-outline-primary me-2">
-                        <i class="fas fa-file-medical me-1"></i>Historias Clínicas
+                    <a href="{{ url_for('vital_signs') }}" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-heartbeat me-1"></i>Signos Vitales
                     </a>
-                    <a href="{{ url_for('exams') }}" class="btn btn-outline-info">
-                        <i class="fas fa-vial me-1"></i>Ver Exámenes
+                    <a href="{{ url_for('nurse_notes') }}" class="btn btn-outline-info">
+                        <i class="fas fa-clipboard-list me-1"></i>Notas de Enfermería
                     </a>
                 </div>
             </div>
