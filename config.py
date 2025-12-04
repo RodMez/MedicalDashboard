@@ -4,10 +4,10 @@ class Config:
     """Configuration class for the medical system"""
     
     # Database configuration for AWS RDS MySQL
-    DB_HOST = 'datafhirdb.czmak2qwe489.us-east-2.rds.amazonaws.com'
-    DB_PORT = 3306
-    DB_USER = 'admin'
-    DB_PASSWORD = 'fhirpass'
+    DB_HOST = ''
+    DB_PORT = xx
+    DB_USER = ''
+    DB_PASSWORD = ''
     DB_NAME = 'FHIR'
     
     # Flask configuration
